@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { useAudioRecorder } from '../hooks/useAudioRecorder';
 
 interface TimedWord {
   word: string;
@@ -15,6 +16,25 @@ interface WaveformData {
 interface VideoPlayerProps {
   projectId: string;
   onBack: () => void;
+}
+
+interface TakeInfo {
+  id: string;
+  projectId: string;
+  filename: string;
+  duration: number;
+  createdAt: string;
+}
+
+interface ExportInfo {
+  id: string;
+  projectId: string;
+  takeId: string;
+  status: string;
+  progress: number;
+  fileName?: string;
+  error?: string;
+  createdAt: string;
 }
 
 const NOW_LINE_RATIO = 0.2;
@@ -106,6 +126,78 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [takes, setTakes] = useState<TakeInfo[]>([]);
+  const [playingTakeId, setPlayingTakeId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const takeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [exports, setExports] = useState<ExportInfo[]>([]);
+  const [exporting, setExporting] = useState(false);
+
+  const { isRecording, audioLevel, startRecording, stopRecording } = useAudioRecorder();
+
+  // Fetch takes list
+  const fetchTakes = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/takes`);
+      if (res.ok) setTakes(await res.json());
+    } catch { /* ignore */ }
+  }, [projectId]);
+
+  const fetchExports = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/exports`);
+      if (res.ok) setExports(await res.json());
+    } catch { /* ignore */ }
+  }, [projectId]);
+
+  const handleExport = useCallback(async (takeId: string) => {
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ takeId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        console.error('Export failed:', data.error);
+        return;
+      }
+      const exportData = await res.json();
+      // Poll for progress via SSE
+      const evtSource = new EventSource(
+        `/api/projects/${projectId}/exports/${exportData.id}/events`
+      );
+      evtSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        setExports((prev) => {
+          const idx = prev.findIndex((e) => e.id === exportData.id);
+          const updated = { ...exportData, ...data };
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = updated;
+            return next;
+          }
+          return [...prev, updated];
+        });
+        if (data.status === 'done' || data.status === 'error') {
+          evtSource.close();
+          setExporting(false);
+          fetchExports();
+        }
+      };
+      evtSource.onerror = () => {
+        evtSource.close();
+        setExporting(false);
+        fetchExports();
+      };
+    } catch (err) {
+      console.error('Export failed:', err);
+      setExporting(false);
+    }
+  }, [projectId, fetchExports]);
+
+  useEffect(() => { fetchTakes(); fetchExports(); }, [fetchTakes, fetchExports]);
 
   useEffect(() => {
     Promise.all([
@@ -123,6 +215,82 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
     if (video.paused) video.play();
     else video.pause();
   }, []);
+
+  const handleRecordPlay = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isRecording) {
+      // Stop recording and video
+      video.pause();
+      const blob = stopRecording();
+      if (blob) {
+        setUploading(true);
+        try {
+          const formData = new FormData();
+          formData.append('audio', blob, 'take.wav');
+          const res = await fetch(`/api/projects/${projectId}/takes`, {
+            method: 'POST',
+            body: formData,
+          });
+          if (res.ok) await fetchTakes();
+        } catch (err) {
+          console.error('Upload failed:', err);
+        } finally {
+          setUploading(false);
+        }
+      }
+    } else {
+      // Start recording and play video from beginning
+      video.currentTime = 0;
+      await startRecording();
+      video.play();
+    }
+  }, [isRecording, stopRecording, startRecording, projectId, fetchTakes]);
+
+  // Stop recording when video ends naturally
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onEnded = async () => {
+      if (!isRecording) return;
+      const blob = stopRecording();
+      if (blob) {
+        setUploading(true);
+        try {
+          const formData = new FormData();
+          formData.append('audio', blob, 'take.wav');
+          const res = await fetch(`/api/projects/${projectId}/takes`, {
+            method: 'POST',
+            body: formData,
+          });
+          if (res.ok) await fetchTakes();
+        } catch (err) {
+          console.error('Upload failed:', err);
+        } finally {
+          setUploading(false);
+        }
+      }
+    };
+    video.addEventListener('ended', onEnded);
+    return () => video.removeEventListener('ended', onEnded);
+  }, [isRecording, stopRecording, projectId, fetchTakes]);
+
+  const playTake = useCallback((takeId: string) => {
+    if (takeAudioRef.current) {
+      takeAudioRef.current.pause();
+      takeAudioRef.current = null;
+    }
+    if (playingTakeId === takeId) {
+      setPlayingTakeId(null);
+      return;
+    }
+    const audio = new Audio(`/api/projects/${projectId}/takes/${takeId}/audio`);
+    audio.onended = () => setPlayingTakeId(null);
+    audio.play();
+    takeAudioRef.current = audio;
+    setPlayingTakeId(takeId);
+  }, [projectId, playingTakeId]);
 
   const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const video = videoRef.current;
@@ -212,12 +380,52 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
         />
       </div>
 
+      {/* Recording indicator */}
+      {isRecording && (
+        <div style={{
+          position: 'absolute', top: '4rem', right: '1rem',
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          padding: '0.4rem 0.8rem', borderRadius: '4px',
+          background: 'rgba(200, 0, 0, 0.8)', color: '#fff', fontSize: '0.85rem',
+          zIndex: 10,
+        }}>
+          <span style={{
+            width: 10, height: 10, borderRadius: '50%',
+            background: '#ff3333', display: 'inline-block',
+            animation: 'pulse 1s ease-in-out infinite',
+          }} />
+          REC
+          {/* Level meter */}
+          <div style={{
+            width: 60, height: 8, background: 'rgba(0,0,0,0.4)',
+            borderRadius: 4, overflow: 'hidden', marginLeft: 4,
+          }}>
+            <div style={{
+              width: `${audioLevel * 100}%`, height: '100%',
+              background: audioLevel > 0.7 ? '#ff3333' : '#33ff33',
+              transition: 'width 50ms',
+            }} />
+          </div>
+        </div>
+      )}
+
       <div style={{
         display: 'flex', alignItems: 'center', gap: '0.75rem',
         padding: '0.6rem 1rem', background: '#1a1a1a', borderTop: '1px solid #333',
       }}>
-        <button onClick={togglePlay} style={btnStyle}>
+        <button onClick={togglePlay} style={btnStyle} disabled={isRecording}>
           {isPlaying ? '⏸ Pause' : '▶ Play'}
+        </button>
+        <button
+          onClick={handleRecordPlay}
+          disabled={uploading}
+          style={{
+            ...btnStyle,
+            background: isRecording ? '#cc0000' : '#8b0000',
+            border: isRecording ? '1px solid #ff3333' : '1px solid #cc0000',
+          }}
+        >
+          {uploading ? '⏳ Uploading…' : isRecording ? '⏹ Stop Rec' : '🎙 Record + Play'}
         </button>
         <span style={{ color: '#aaa', fontSize: '0.8rem', minWidth: '4rem' }}>
           {formatTime(currentTime)}
@@ -227,11 +435,81 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
           value={currentTime}
           onChange={handleSeek}
           style={{ flex: 1 }}
+          disabled={isRecording}
         />
         <span style={{ color: '#aaa', fontSize: '0.8rem', minWidth: '4rem', textAlign: 'right' }}>
           {formatTime(duration)}
         </span>
       </div>
+
+      {/* Takes list */}
+      {takes.length > 0 && (
+        <div style={{
+          padding: '0.5rem 1rem', background: '#111', borderTop: '1px solid #333',
+          maxHeight: '8rem', overflowY: 'auto',
+        }}>
+          <div style={{ color: '#888', fontSize: '0.75rem', marginBottom: '0.3rem' }}>
+            Takes ({takes.length})
+          </div>
+          {takes.map((take) => {
+            const takeExport = exports.find((e) => e.takeId === take.id);
+            return (
+              <div key={take.id} style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.25rem 0', borderBottom: '1px solid #222',
+              }}>
+                <button
+                  onClick={() => playTake(take.id)}
+                  style={{ ...btnStyle, padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
+                >
+                  {playingTakeId === take.id ? '⏹' : '▶'}
+                </button>
+                <span style={{ color: '#ccc', fontSize: '0.8rem' }}>
+                  Take {takes.length - takes.indexOf(take)}
+                </span>
+                <span style={{ color: '#666', fontSize: '0.75rem' }}>
+                  {formatTime(take.duration)} — {new Date(take.createdAt).toLocaleTimeString()}
+                </span>
+                <span style={{ flex: 1 }} />
+                {takeExport?.status === 'done' ? (
+                  <a
+                    href={`/api/projects/${projectId}/exports/${takeExport.id}?download=true`}
+                    download={takeExport.fileName}
+                    style={{ ...btnStyle, padding: '0.2rem 0.5rem', fontSize: '0.75rem', background: '#166534', textDecoration: 'none', color: '#fff' }}
+                  >
+                    📥 Download
+                  </a>
+                ) : takeExport && takeExport.status !== 'error' ? (
+                  <span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>
+                    ⏳ {takeExport.status} {takeExport.progress}%
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleExport(take.id)}
+                    disabled={exporting}
+                    style={{ ...btnStyle, padding: '0.2rem 0.5rem', fontSize: '0.75rem', background: '#1d4ed8', opacity: exporting ? 0.5 : 1 }}
+                  >
+                    🎬 Export
+                  </button>
+                )}
+                {takeExport?.status === 'error' && (
+                  <span style={{ color: '#ef4444', fontSize: '0.7rem' }} title={takeExport.error}>
+                    ❌ Error
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pulse animation for recording indicator */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 }
