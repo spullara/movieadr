@@ -57,35 +57,75 @@ function drawTeleprompter(
   H: number,
   nowX: number,
 ) {
-  const fontSize = Math.max(20, Math.min(32, H * 0.05));
+  const fontSize = Math.max(14, Math.min(22, H * 0.035));
   ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
   ctx.textBaseline = 'middle';
   const pxPerSec = W * 0.15;
-  const y = H * 0.85; // same vertical center as waveform
+  const baseY = H * 0.85; // same vertical center as waveform
+  const wordGap = fontSize * 0.5; // horizontal padding between words
   const visibleLeft = currentTime - (nowX / pxPerSec) - 2;
   const visibleRight = currentTime + ((W - nowX) / pxPerSec) + 2;
+
+  // Group words into lines based on timing gaps (>0.3s gap = new line)
+  const lines: TimedWord[][] = [];
+  let currentLine: TimedWord[] = [];
+  for (let i = 0; i < words.length; i++) {
+    if (currentLine.length > 0) {
+      const prevEnd = currentLine[currentLine.length - 1].end;
+      if (words[i].start - prevEnd > 0.3) {
+        lines.push(currentLine);
+        currentLine = [];
+      }
+    }
+    currentLine.push(words[i]);
+  }
+  if (currentLine.length > 0) lines.push(currentLine);
 
   // Set up text outline for readability
   ctx.lineWidth = 3;
   ctx.lineJoin = 'round';
   ctx.strokeStyle = '#000000';
 
-  for (const w of words) {
-    if (w.start < visibleLeft || w.start > visibleRight) continue;
-    const x = nowX + (w.start - currentTime) * pxPerSec;
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    // Skip lines entirely outside visible range
+    if (line[line.length - 1].start < visibleLeft || line[0].start > visibleRight) continue;
 
-    if (currentTime >= w.start && currentTime <= w.end) {
+    // Alternate lines vertically: even lines above center, odd lines below
+    const lineOffset = (li % 2 === 0) ? -fontSize * 0.8 : fontSize * 0.8;
+    const y = baseY + lineOffset;
+
+    // Compute cumulative x offsets so words don't overlap
+    // First word anchors at its timestamp position; subsequent words are offset
+    // by the measured width of previous words + gap, or by their own timestamp,
+    // whichever places them further right.
+    let nextMinX = -Infinity;
+    for (const w of line) {
+      if (w.start < visibleLeft || w.start > visibleRight) {
+        // still accumulate width for off-screen words so spacing stays correct
+        const tsX = nowX + (w.start - currentTime) * pxPerSec;
+        const textW = ctx.measureText(w.word).width;
+        nextMinX = Math.max(tsX, nextMinX) + textW + wordGap;
+        continue;
+      }
+
+      const tsX = nowX + (w.start - currentTime) * pxPerSec;
+      const x = Math.max(tsX, nextMinX);
       const textW = ctx.measureText(w.word).width;
-      ctx.fillStyle = 'rgba(255, 100, 100, 0.35)';
-      ctx.fillRect(x - 2, y - fontSize * 0.6, textW + 4, fontSize * 1.2);
-      ctx.fillStyle = '#ffffff';
-    } else if (currentTime > w.end) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    } else {
-      ctx.fillStyle = '#ffffff';
+      nextMinX = x + textW + wordGap;
+
+      if (currentTime >= w.start && currentTime <= w.end) {
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.35)';
+        ctx.fillRect(x - 2, y - fontSize * 0.6, textW + 4, fontSize * 1.2);
+        ctx.fillStyle = '#ffffff';
+      } else if (currentTime > w.end) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      } else {
+        ctx.fillStyle = '#ffffff';
+      }
+      ctx.strokeText(w.word, x, y); // black outline first
+      ctx.fillText(w.word, x, y);   // then fill on top
     }
-    ctx.strokeText(w.word, x, y); // black outline first
-    ctx.fillText(w.word, x, y);   // then fill on top
   }
 }
 
