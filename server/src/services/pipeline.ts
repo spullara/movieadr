@@ -9,7 +9,16 @@ const PYTHON = path.resolve('..', 'venv', 'bin', 'python');
 
 function run(cmd: string, args: string[], cwd?: string): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(cmd, args, { cwd });
+    const proc = spawn(cmd, args, {
+      cwd,
+      env: {
+        ...process.env,
+        PYTHONHTTPSVERIFY: '0',
+        SSL_CERT_FILE: '',
+        CURL_CA_BUNDLE: '',
+        REQUESTS_CA_BUNDLE: '',
+      },
+    });
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
     proc.stdout.on('data', (d) => stdout.push(d));

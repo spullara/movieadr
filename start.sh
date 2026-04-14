@@ -21,6 +21,16 @@ whisper.load_model('base')
 print('Whisper model ready.')
 "
 
+# Pre-download Demucs model on first run (with SSL fix for macOS)
+echo "Pre-downloading Demucs model..."
+./venv/bin/python -c "
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+from demucs.pretrained import get_model
+get_model('htdemucs')
+print('Demucs model ready')
+" 2>&1 || echo "Warning: Demucs model pre-download failed (will retry at runtime)"
+
 cleanup() {
   echo ""
   echo "Shutting down..."
