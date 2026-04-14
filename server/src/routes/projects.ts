@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { stat } from 'fs/promises';
-import { createReadStream } from 'fs';
+import { stat, readdir } from 'fs/promises';
+import { createReadStream, existsSync } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import multer from 'multer';
@@ -94,6 +94,8 @@ projectsRouter.post('/projects/youtube', async (req, res) => {
     const pythonPath = path.resolve('..', 'venv', 'bin', 'python');
     const ytDlpArgs = [
       '-m', 'yt_dlp',
+      '--no-check-certificates',
+      '--verbose',
       '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
       '--merge-output-format', 'mp4',
       '--print', 'after_filter:%(title)s',
@@ -102,13 +104,7 @@ projectsRouter.post('/projects/youtube', async (req, res) => {
     ];
 
     const proc = spawn(pythonPath, ytDlpArgs, {
-      env: {
-        ...process.env,
-        PYTHONHTTPSVERIFY: '0',
-        SSL_CERT_FILE: '',
-        CURL_CA_BUNDLE: '',
-        REQUESTS_CA_BUNDLE: '',
-      },
+      env: { ...process.env },
     });
 
     let titleFromYtDlp = '';
@@ -116,20 +112,36 @@ projectsRouter.post('/projects/youtube', async (req, res) => {
 
     proc.stdout.on('data', (data: Buffer) => {
       const line = data.toString().trim();
+      console.log('[youtube]', line);
       if (line && !titleFromYtDlp) {
         titleFromYtDlp = line;
       }
     });
 
     proc.stderr.on('data', (data: Buffer) => {
+      console.error('[youtube]', data.toString());
       stderrOutput += data.toString();
     });
 
-    proc.on('close', (code) => {
+    proc.on('close', async (code) => {
       if (code !== 0) {
         console.error(`[youtube] yt-dlp failed with code ${code}: ${stderrOutput}`);
         updateProjectStatus(id, 'error', 0, `yt-dlp failed: ${stderrOutput.slice(0, 500)}`);
         return;
+      }
+
+      // Verify the file actually exists
+      if (!existsSync(outputPath)) {
+        const files = await readdir(projectDir);
+        console.error(`[youtube] input.mp4 not found after download. Files in project dir:`, files);
+
+        // Check if yt-dlp saved with a different name/extension
+        const videoFile = files.find(f => /\.(mp4|mkv|webm|mov|avi)$/i.test(f));
+        if (!videoFile) {
+          updateProjectStatus(id, 'error', 0, `yt-dlp exited 0 but no video file found. Files: ${files.join(', ')}`);
+          return;
+        }
+        console.log(`[youtube] Found video file with different name: ${videoFile}`);
       }
 
       // Update project name from video title
