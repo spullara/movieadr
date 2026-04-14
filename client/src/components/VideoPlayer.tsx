@@ -126,6 +126,8 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
+  const instrumentalRef = useRef<HTMLAudioElement | null>(null);
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [words, setWords] = useState<TimedWord[]>([]);
   const [waveform, setWaveform] = useState<WaveformData | null>(null);
@@ -140,6 +142,72 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
   const [exporting, setExporting] = useState(false);
 
   const { isRecording, audioLevel, startRecording, stopRecording } = useAudioRecorder();
+
+  // Initialize instrumental audio element and sync with video
+  useEffect(() => {
+    const audio = new Audio(`/projects/${projectId}/instrumental.wav`);
+    audio.preload = 'auto';
+    instrumentalRef.current = audio;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Mute video so original vocals don't play
+    video.muted = true;
+
+    const onPlay = () => {
+      audio.currentTime = video.currentTime;
+      audio.play().catch(() => {});
+      // Start drift correction
+      syncIntervalRef.current = setInterval(() => {
+        if (video.paused || audio.paused) return;
+        const drift = Math.abs(video.currentTime - audio.currentTime);
+        if (drift > 0.05) {
+          audio.currentTime = video.currentTime;
+        }
+      }, 200);
+    };
+
+    const onPause = () => {
+      audio.pause();
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    };
+
+    const onSeeked = () => {
+      audio.currentTime = video.currentTime;
+    };
+
+    const onEnded = () => {
+      audio.pause();
+      audio.currentTime = 0;
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    };
+
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('seeked', onSeeked);
+    video.addEventListener('ended', onEnded);
+
+    return () => {
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('seeked', onSeeked);
+      video.removeEventListener('ended', onEnded);
+      audio.pause();
+      audio.src = '';
+      instrumentalRef.current = null;
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    };
+  }, [projectId]);
 
   // Fetch takes list
   const fetchTakes = useCallback(async () => {
@@ -381,6 +449,7 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
         <video
           ref={videoRef}
           src={`/api/projects/${projectId}/video`}
+          muted
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
