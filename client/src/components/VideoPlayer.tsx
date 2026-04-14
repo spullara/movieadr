@@ -61,9 +61,14 @@ function drawTeleprompter(
   ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
   ctx.textBaseline = 'middle';
   const pxPerSec = W * 0.15;
-  const y = H * 0.15;
+  const y = H * 0.85; // same vertical center as waveform
   const visibleLeft = currentTime - (nowX / pxPerSec) - 2;
   const visibleRight = currentTime + ((W - nowX) / pxPerSec) + 2;
+
+  // Set up text outline for readability
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#000000';
 
   for (const w of words) {
     if (w.start < visibleLeft || w.start > visibleRight) continue;
@@ -71,15 +76,16 @@ function drawTeleprompter(
 
     if (currentTime >= w.start && currentTime <= w.end) {
       const textW = ctx.measureText(w.word).width;
-      ctx.fillStyle = 'rgba(255, 100, 100, 0.25)';
+      ctx.fillStyle = 'rgba(255, 100, 100, 0.35)';
       ctx.fillRect(x - 2, y - fontSize * 0.6, textW + 4, fontSize * 1.2);
       ctx.fillStyle = '#ffffff';
     } else if (currentTime > w.end) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     } else {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.fillStyle = '#ffffff';
     }
-    ctx.fillText(w.word, x, y);
+    ctx.strokeText(w.word, x, y); // black outline first
+    ctx.fillText(w.word, x, y);   // then fill on top
   }
 }
 
@@ -311,6 +317,12 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
     const nowX = W * NOW_LINE_RATIO;
 
     ctx.clearRect(0, 0, W, H);
+
+    // Dark background band behind waveform/text area for readability
+    const bandY = H * 0.85;
+    const bandH = H * 0.15;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(0, bandY - bandH, W, bandH * 2);
 
     if (waveform && waveform.peaks.length > 0) {
       drawWaveform(ctx, waveform, t, W, H, nowX);
