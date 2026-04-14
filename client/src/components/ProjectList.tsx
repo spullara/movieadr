@@ -12,6 +12,7 @@ interface ProjectSummary {
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
+  downloading: 'Downloading video…',
   extracting_audio: 'Extracting audio…',
   transcribing: 'Transcribing…',
   separating_vocals: 'Separating vocals…',
@@ -25,6 +26,8 @@ export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [submittingUrl, setSubmittingUrl] = useState(false);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -93,6 +96,31 @@ export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
     }
   };
 
+  const handleYoutubeSubmit = async () => {
+    if (!youtubeUrl.trim()) return;
+    setSubmittingUrl(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/projects/youtube', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: youtubeUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to import YouTube video');
+        return;
+      }
+      setYoutubeUrl('');
+      loadProjects();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import YouTube video');
+    } finally {
+      setSubmittingUrl(false);
+    }
+  };
+
   return (
     <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>🎤 Movie Karaoke</h1>
@@ -121,6 +149,35 @@ export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
             <div style={{ width: `${uploadProgress}%`, height: '100%', background: '#3b82f6', transition: 'width 0.2s' }} />
           </div>
         )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
+          <span style={{ color: '#888', fontSize: '0.85rem' }}>or</span>
+          <input
+            type="text"
+            placeholder="Paste YouTube URL…"
+            value={youtubeUrl}
+            onChange={(e) => setYoutubeUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleYoutubeSubmit()}
+            disabled={submittingUrl || uploading}
+            style={{
+              flex: 1, padding: '0.5rem 0.75rem', borderRadius: '6px',
+              border: '1px solid #444', background: '#1a1a1a', color: '#fff',
+              fontSize: '0.9rem', outline: 'none',
+            }}
+          />
+          <button
+            onClick={handleYoutubeSubmit}
+            disabled={submittingUrl || uploading || !youtubeUrl.trim()}
+            style={{
+              padding: '0.5rem 1rem', borderRadius: '6px', border: 'none',
+              background: submittingUrl || !youtubeUrl.trim() ? '#555' : '#ef4444',
+              color: '#fff', cursor: submittingUrl || !youtubeUrl.trim() ? 'default' : 'pointer',
+              fontSize: '0.9rem', whiteSpace: 'nowrap',
+            }}
+          >
+            {submittingUrl ? 'Importing…' : '▶ Import'}
+          </button>
+        </div>
       </div>
       {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
 

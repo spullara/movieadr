@@ -11,6 +11,10 @@ sleep 1
 # Activate Python venv
 source venv/bin/activate
 
+# Install yt-dlp for YouTube video downloads
+echo "Ensuring yt-dlp is installed..."
+./venv/bin/pip install -q yt-dlp
+
 # Pre-download Whisper model on first run (with SSL fix for macOS)
 echo "Checking Whisper model cache..."
 python -c "

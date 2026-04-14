@@ -1,6 +1,7 @@
 /** Status of a project's preparation pipeline */
 export type PreparationStatus =
   | 'pending'
+  | 'downloading'
   | 'extracting_audio'
   | 'transcribing'
   | 'separating_vocals'

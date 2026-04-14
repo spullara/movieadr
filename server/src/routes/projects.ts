@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { stat } from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
+import { spawn } from 'child_process';
 import multer from 'multer';
-import { createProjectDir, registerProject, getProject, listProjects, projectEvents } from '../services/projects.js';
+import { createProjectDir, registerProject, getProject, listProjects, projectEvents, updateProjectStatus } from '../services/projects.js';
 import { runPipeline } from '../services/pipeline.js';
 
 export const projectsRouter = Router();
@@ -56,6 +57,94 @@ projectsRouter.post('/projects', upload.single('video'), async (req, res) => {
       status: project.status,
       progress: project.progress,
       createdAt: project.createdAt,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
+  }
+});
+
+/** POST /api/projects/youtube — Create a new project from a YouTube URL */
+projectsRouter.post('/projects/youtube', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url || typeof url !== 'string') {
+      res.status(400).json({ error: 'Missing or invalid "url" field' });
+      return;
+    }
+
+    const { id, projectDir } = await createProjectDir();
+    const outputPath = path.join(projectDir, 'input.mp4');
+
+    // Register project immediately with a placeholder name
+    const project = registerProject(id, projectDir, outputPath, 'youtube-video.mp4');
+    updateProjectStatus(id, 'downloading', 5);
+
+    // Respond immediately so the client can start polling
+    res.status(201).json({
+      id: project.id,
+      name: project.name,
+      videoFileName: project.videoFileName,
+      status: 'downloading',
+      progress: 5,
+      createdAt: project.createdAt,
+    });
+
+    // Download in background
+    const pythonPath = path.resolve('..', 'venv', 'bin', 'python');
+    const ytDlpArgs = [
+      '-m', 'yt_dlp',
+      '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+      '--merge-output-format', 'mp4',
+      '--print', 'after_filter:%(title)s',
+      '-o', outputPath,
+      url,
+    ];
+
+    const proc = spawn(pythonPath, ytDlpArgs, {
+      env: {
+        ...process.env,
+        PYTHONHTTPSVERIFY: '0',
+        SSL_CERT_FILE: '',
+        CURL_CA_BUNDLE: '',
+        REQUESTS_CA_BUNDLE: '',
+      },
+    });
+
+    let titleFromYtDlp = '';
+    let stderrOutput = '';
+
+    proc.stdout.on('data', (data: Buffer) => {
+      const line = data.toString().trim();
+      if (line && !titleFromYtDlp) {
+        titleFromYtDlp = line;
+      }
+    });
+
+    proc.stderr.on('data', (data: Buffer) => {
+      stderrOutput += data.toString();
+    });
+
+    proc.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`[youtube] yt-dlp failed with code ${code}: ${stderrOutput}`);
+        updateProjectStatus(id, 'error', 0, `yt-dlp failed: ${stderrOutput.slice(0, 500)}`);
+        return;
+      }
+
+      // Update project name from video title
+      if (titleFromYtDlp) {
+        project.name = titleFromYtDlp;
+        project.videoFileName = `${titleFromYtDlp}.mp4`;
+      }
+
+      // Start the normal pipeline
+      runPipeline(project);
+    });
+
+    proc.on('error', (err) => {
+      console.error('[youtube] Failed to start yt-dlp:', err.message);
+      updateProjectStatus(id, 'error', 0, `Failed to start yt-dlp: ${err.message}`);
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
