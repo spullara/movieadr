@@ -5,7 +5,7 @@ import type { ProjectEntry } from './projects.js';
 import { updateProjectStatus } from './projects.js';
 
 /** Path to the venv Python binary, resolved relative to the project root */
-const PYTHON = path.resolve('venv', 'bin', 'python');
+const PYTHON = path.resolve('..', 'venv', 'bin', 'python');
 
 function run(cmd: string, args: string[], cwd?: string): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -20,6 +20,7 @@ function run(cmd: string, args: string[], cwd?: string): Promise<{ stdout: strin
         stderr: Buffer.concat(stderr).toString(),
       };
       if (code !== 0) {
+        console.error(`[pipeline] Command failed: ${cmd} ${args.join(' ')}\n  exit code: ${code}\n  stderr: ${result.stderr}`);
         const err = new Error(`${cmd} exited with code ${code}: ${result.stderr}`);
         (err as any).stdout = result.stdout;
         (err as any).stderr = result.stderr;
@@ -28,7 +29,10 @@ function run(cmd: string, args: string[], cwd?: string): Promise<{ stdout: strin
         resolve(result);
       }
     });
-    proc.on('error', reject);
+    proc.on('error', (err) => {
+      console.error(`[pipeline] Command failed: ${cmd} ${args.join(' ')}`, err.message);
+      reject(err);
+    });
   });
 }
 
