@@ -95,7 +95,7 @@ projectsRouter.post('/projects/youtube', async (req, res) => {
     const ytDlpArgs = [
       '-m', 'yt_dlp',
       '--no-check-certificates',
-      '--verbose',
+      '--remote-components', 'ejs:github',
       '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
       '--merge-output-format', 'mp4',
       '--print', 'after_filter:%(title)s',
