@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { access } from 'fs/promises';
+import { access, stat } from 'fs/promises';
+import { createReadStream } from 'fs';
+import path from 'path';
 import { createProject, getProject, listProjects, projectEvents } from '../services/projects.js';
 import { runPipeline } from '../services/pipeline.js';
 
@@ -111,4 +113,51 @@ projectsRouter.get('/projects/:id/events', (req, res) => {
   req.on('close', () => {
     projectEvents.off('progress', onProgress);
   });
+});
+
+/** GET /api/projects/:id/video — Stream the original video file with range support */
+projectsRouter.get('/projects/:id/video', async (req, res) => {
+  const project = getProject(req.params.id);
+  if (!project) {
+    res.status(404).json({ error: 'Project not found' });
+    return;
+  }
+
+  try {
+    const fileStat = await stat(project.videoPath);
+    const fileSize = fileStat.size;
+    const ext = path.extname(project.videoPath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.mp4': 'video/mp4',
+      '.mkv': 'video/x-matroska',
+      '.mov': 'video/quicktime',
+      '.webm': 'video/webm',
+    };
+    const contentType = mimeTypes[ext] || 'video/mp4';
+
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': contentType,
+      });
+      createReadStream(project.videoPath, { start, end }).pipe(res);
+    } else {
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': contentType,
+        'Accept-Ranges': 'bytes',
+      });
+      createReadStream(project.videoPath).pipe(res);
+    }
+  } catch {
+    res.status(500).json({ error: 'Failed to stream video' });
+  }
 });

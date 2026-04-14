@@ -1,22 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { ProjectList } from './components/ProjectList';
+import { VideoPlayer } from './components/VideoPlayer';
 
 export function App() {
-  const [health, setHealth] = useState<string>('checking...');
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then((data) => setHealth(data.status))
-      .catch(() => setHealth('error'));
-  }, []);
+  if (selectedProject) {
+    return (
+      <VideoPlayer
+        projectId={selectedProject}
+        onBack={() => setSelectedProject(null)}
+      />
+    );
+  }
 
-  return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <h1>🎤 Movie Karaoke</h1>
-      <p>ADR (Automated Dialogue Replacement) Tool</p>
-      <p>
-        Backend status: <strong>{health}</strong>
-      </p>
-    </div>
-  );
+  return <ProjectList onSelect={setSelectedProject} />;
 }
