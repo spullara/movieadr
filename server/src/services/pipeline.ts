@@ -4,6 +4,9 @@ import { writeFile } from 'fs/promises';
 import type { ProjectEntry } from './projects.js';
 import { updateProjectStatus } from './projects.js';
 
+/** Path to the venv Python binary, resolved relative to the project root */
+const PYTHON = path.resolve('venv', 'bin', 'python');
+
 function run(cmd: string, args: string[], cwd?: string): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const proc = spawn(cmd, args, { cwd });
@@ -67,7 +70,7 @@ with open(sys.argv[2], "w") as f:
 `;
 
   await writeFile(scriptPath, script);
-  await run('python3', [scriptPath, audioPath, outputPath]);
+  await run(PYTHON, [scriptPath, audioPath, outputPath]);
 }
 
 /** Step 3: Run Demucs for vocal separation, produce instrumental mix */
@@ -82,7 +85,7 @@ async function runDemucs(project: ProjectEntry): Promise<void> {
   ]);
 
   // Run Demucs
-  await run('python3', [
+  await run(PYTHON, [
     '-m', 'demucs',
     '--two-stems', 'vocals',   // only separate vocals vs rest
     '-n', 'htdemucs',
@@ -130,7 +133,7 @@ with open(output_path, "w") as f:
 `;
 
   await writeFile(scriptPath, script);
-  await run('python3', [scriptPath, audioPath, outputPath]);
+  await run(PYTHON, [scriptPath, audioPath, outputPath]);
 }
 
 /** Run the full preparation pipeline for a project */
