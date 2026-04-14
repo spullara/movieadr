@@ -1,31 +1,50 @@
 import { Router } from 'express';
-import { access, stat } from 'fs/promises';
+import { stat } from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
-import { createProject, getProject, listProjects, projectEvents } from '../services/projects.js';
+import multer from 'multer';
+import { createProjectDir, registerProject, getProject, listProjects, projectEvents } from '../services/projects.js';
 import { runPipeline } from '../services/pipeline.js';
 
 export const projectsRouter = Router();
 
-/** POST /api/projects — Create a new project from a video file path */
-projectsRouter.post('/projects', async (req, res) => {
+// Configure multer to upload directly into the project directory
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: async (_req, _file, cb) => {
+      try {
+        const { id, projectDir } = await createProjectDir();
+        // Attach to request so we can use later
+        (_req as any)._projectId = id;
+        (_req as any)._projectDir = projectDir;
+        cb(null, projectDir);
+      } catch (err) {
+        cb(err as Error, '');
+      }
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname) || '.mp4';
+      cb(null, `input${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 }, // 10 GB
+});
+
+/** POST /api/projects — Create a new project from an uploaded video file */
+projectsRouter.post('/projects', upload.single('video'), async (req, res) => {
   try {
-    const { videoPath } = req.body;
-
-    if (!videoPath || typeof videoPath !== 'string') {
-      res.status(400).json({ error: 'videoPath is required' });
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ error: 'No video file uploaded' });
       return;
     }
 
-    // Verify file exists
-    try {
-      await access(videoPath);
-    } catch {
-      res.status(400).json({ error: `Video file not found: ${videoPath}` });
-      return;
-    }
+    const projectId = (req as any)._projectId as string;
+    const projectDir = (req as any)._projectDir as string;
+    const videoPath = file.path;
+    const videoFileName = file.originalname;
 
-    const project = await createProject(videoPath);
+    const project = registerProject(projectId, projectDir, videoPath, videoFileName);
 
     // Start pipeline in background (don't await)
     runPipeline(project);

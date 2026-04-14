@@ -11,6 +11,16 @@ sleep 1
 # Activate Python venv
 source venv/bin/activate
 
+# Pre-download Whisper model on first run (with SSL fix for macOS)
+echo "Checking Whisper model cache..."
+python -c "
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+import whisper
+whisper.load_model('base')
+print('Whisper model ready.')
+"
+
 cleanup() {
   echo ""
   echo "Shutting down..."

@@ -22,8 +22,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
-  const [videoPath, setVideoPath] = useState('');
-  const [importing, setImporting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
 
   const loadProjects = useCallback(async () => {
@@ -42,28 +42,54 @@ export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
     return () => clearInterval(interval);
   }, [loadProjects]);
 
-  const handleImport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!videoPath.trim()) return;
-    setImporting(true);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadProgress(0);
     setError('');
+
+    const formData = new FormData();
+    formData.append('video', file);
+
     try {
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoPath: videoPath.trim() }),
+      // Use XMLHttpRequest for upload progress
+      const result = await new Promise<{ ok: boolean; data: unknown }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/projects');
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setUploadProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            resolve({ ok: xhr.status >= 200 && xhr.status < 300, data });
+          } catch {
+            reject(new Error('Invalid response'));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send(formData);
       });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Import failed');
+
+      if (!result.ok) {
+        setError((result.data as { error?: string })?.error || 'Upload failed');
         return;
       }
-      setVideoPath('');
       loadProjects();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Import failed');
+      setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
-      setImporting(false);
+      setUploading(false);
+      setUploadProgress(0);
+      // Reset the file input
+      e.target.value = '';
     }
   };
 
@@ -72,30 +98,30 @@ export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
       <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>🎤 Movie Karaoke</h1>
       <p style={{ color: '#999', marginBottom: '2rem' }}>ADR (Automated Dialogue Replacement) Tool</p>
 
-      <form onSubmit={handleImport} style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
-        <input
-          type="text"
-          value={videoPath}
-          onChange={(e) => setVideoPath(e.target.value)}
-          placeholder="Paste full path to a video file…"
+      <div style={{ marginBottom: '2rem' }}>
+        <label
           style={{
-            flex: 1, padding: '0.6rem 0.8rem', borderRadius: '6px',
-            border: '1px solid #444', background: '#2a2a2a', color: '#fff',
-            fontSize: '0.9rem',
-          }}
-        />
-        <button
-          type="submit"
-          disabled={importing || !videoPath.trim()}
-          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             padding: '0.6rem 1.2rem', borderRadius: '6px', border: 'none',
-            background: '#3b82f6', color: '#fff', cursor: 'pointer',
-            fontSize: '0.9rem', opacity: importing ? 0.6 : 1,
+            background: uploading ? '#555' : '#3b82f6', color: '#fff',
+            cursor: uploading ? 'default' : 'pointer', fontSize: '0.9rem',
           }}
         >
-          {importing ? 'Importing…' : 'Import'}
-        </button>
-      </form>
+          <input
+            type="file"
+            accept="video/*"
+            onChange={handleFileSelect}
+            disabled={uploading}
+            style={{ display: 'none' }}
+          />
+          {uploading ? `Uploading… ${uploadProgress}%` : '📁 Choose Video File'}
+        </label>
+        {uploading && (
+          <div style={{ marginTop: '0.5rem', background: '#333', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
+            <div style={{ width: `${uploadProgress}%`, height: '100%', background: '#3b82f6', transition: 'width 0.2s' }} />
+          </div>
+        )}
+      </div>
       {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
 
       {projects.length === 0 ? (

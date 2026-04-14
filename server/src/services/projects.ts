@@ -15,12 +15,14 @@ export interface ProjectEntry extends Project {
 const projects = new Map<string, ProjectEntry>();
 export const projectEvents = new EventEmitter();
 
-export async function createProject(videoPath: string): Promise<ProjectEntry> {
+export async function createProjectDir(): Promise<{ id: string; projectDir: string }> {
   const id = randomUUID();
   const projectDir = path.join(PROJECTS_DIR, id);
   await mkdir(projectDir, { recursive: true });
+  return { id, projectDir };
+}
 
-  const videoFileName = path.basename(videoPath);
+export function registerProject(id: string, projectDir: string, videoPath: string, videoFileName: string): ProjectEntry {
   const project: ProjectEntry = {
     id,
     name: videoFileName.replace(/\.[^.]+$/, ''),

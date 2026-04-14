@@ -58,6 +58,9 @@ async function runWhisper(project: ProjectEntry, audioPath: string): Promise<voi
 
   // Write a small Python script that runs Whisper and outputs JSON
   const script = `
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 import json, sys
 import whisper
 
