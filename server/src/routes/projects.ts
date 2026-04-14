@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { stat, readdir } from 'fs/promises';
+import { stat, readdir, readFile } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -92,13 +92,14 @@ projectsRouter.post('/projects/youtube', async (req, res) => {
 
     // Download in background
     const pythonPath = path.resolve('..', 'venv', 'bin', 'python');
+    const titleFilePath = path.join(projectDir, '_title.txt');
     const ytDlpArgs = [
       '-m', 'yt_dlp',
       '--no-check-certificates',
       '--remote-components', 'ejs:github',
       '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
       '--merge-output-format', 'mp4',
-      '--print', 'after_filter:%(title)s',
+      '--print-to-file', 'after_filter:%(title)s', titleFilePath,
       '-o', outputPath,
       url,
     ];
@@ -107,15 +108,10 @@ projectsRouter.post('/projects/youtube', async (req, res) => {
       env: { ...process.env },
     });
 
-    let titleFromYtDlp = '';
     let stderrOutput = '';
 
     proc.stdout.on('data', (data: Buffer) => {
-      const line = data.toString().trim();
-      console.log('[youtube]', line);
-      if (line && !titleFromYtDlp) {
-        titleFromYtDlp = line;
-      }
+      console.log('[youtube]', data.toString().trim());
     });
 
     proc.stderr.on('data', (data: Buffer) => {
@@ -145,9 +141,14 @@ projectsRouter.post('/projects/youtube', async (req, res) => {
       }
 
       // Update project name from video title
-      if (titleFromYtDlp) {
-        project.name = titleFromYtDlp;
-        project.videoFileName = `${titleFromYtDlp}.mp4`;
+      try {
+        const titleFromYtDlp = (await readFile(titleFilePath, 'utf-8')).trim();
+        if (titleFromYtDlp) {
+          project.name = titleFromYtDlp;
+          project.videoFileName = `${titleFromYtDlp}.mp4`;
+        }
+      } catch {
+        console.warn('[youtube] Could not read title file, using default name');
       }
 
       // Start the normal pipeline
