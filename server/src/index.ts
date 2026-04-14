@@ -12,6 +12,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Request logging
+app.use((req, _res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
 // Serve project files (audio, timestamps, waveform data)
 app.use('/projects', express.static(path.resolve('projects')));
 
@@ -21,6 +27,16 @@ app.use('/api', projectsRouter);
 app.use('/api', takesRouter);
 app.use('/api', exportsRouter);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\nError: Port ${PORT} is already in use.`);
+    console.error(`Fix it by running: lsof -ti:${PORT} | xargs kill`);
+  } else {
+    console.error('Server error:', err);
+  }
+  process.exit(1);
 });
