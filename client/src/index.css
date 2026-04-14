@@ -1,0 +1,9 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: #1a1a1a;
+  color: #ffffffde;
+}
