@@ -6,6 +6,8 @@ struct TakeListView: View {
     let project: Project
     @Bindable var recordingVM: RecordingViewModel
     @Environment(\.modelContext) private var modelContext
+    @State private var showExportSheet = false
+    @State private var exportTake: Take?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -37,6 +39,9 @@ struct TakeListView: View {
             }
         }
         .padding(12)
+        .sheet(isPresented: $showExportSheet) {
+            ExportView(project: project)
+        }
     }
 
     private var sortedTakes: [Take] {
@@ -67,19 +72,31 @@ struct TakeListView: View {
                     recordingVM.playTake(take)
                 }
             }) {
-                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                Label(isPlaying ? "Stop" : "Play", systemImage: isPlaying ? "stop.fill" : "play.fill")
+                    .font(.caption)
                     .foregroundStyle(isPlaying ? .red : .accentColor)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
+            // Export button
+            Button(action: { showExportSheet = true; exportTake = take }) {
+                Label("Export", systemImage: "film")
+                    .font(.caption)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
 
             // Delete button
             Button(action: {
                 recordingVM.deleteTake(take, modelContext: modelContext)
             }) {
-                Image(systemName: "trash")
+                Label("Delete", systemImage: "trash")
+                    .font(.caption)
                     .foregroundStyle(.red.opacity(0.7))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)

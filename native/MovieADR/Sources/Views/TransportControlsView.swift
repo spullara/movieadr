@@ -25,10 +25,11 @@ struct TransportControlsView: View {
                     controller.togglePlayPause()
                     handlePlayPauseRecording()
                 }) {
-                    Image(systemName: controller.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.title2)
+                    Label(controller.isPlaying ? "Pause" : "Play",
+                          systemImage: controller.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.body)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.bordered)
 
                 // Skip backward 5s (disabled during recording)
                 Button(action: { controller.seek(to: max(0, controller.currentTime - 5)) }) {
@@ -47,23 +48,15 @@ struct TransportControlsView: View {
                 // Record button
                 if let vm = recordingVM {
                     Button(action: { toggleRecording(vm: vm) }) {
-                        ZStack {
-                            Circle()
-                                .fill(vm.isRecording ? .red : .red.opacity(0.7))
-                                .frame(width: 28, height: 28)
-
-                            if vm.isRecording {
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(.white)
-                                    .frame(width: 10, height: 10)
-                            } else {
-                                Circle()
-                                    .fill(.white)
-                                    .frame(width: 12, height: 12)
-                            }
-                        }
+                        Label(
+                            vm.isRecording ? "Stop Rec" : "Record + Play",
+                            systemImage: vm.isRecording ? "stop.fill" : "record.circle"
+                        )
+                        .font(.body)
+                        .foregroundStyle(vm.isRecording ? .red : .primary)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.bordered)
+                    .tint(vm.isRecording ? .red : .red.opacity(0.7))
                     .padding(.leading, 8)
                 }
 
