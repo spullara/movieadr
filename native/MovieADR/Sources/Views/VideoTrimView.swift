@@ -15,16 +15,19 @@ struct VideoTrimView: View {
     @State private var isLoading = true
     @State private var pipeline = PreparationPipeline()
     @State private var isProcessing = false
+    @State private var playerController: PlayerController?
 
     private let thumbnailCount = 20
     private let scrubberHeight: CGFloat = 60
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 if isLoading {
                     ProgressView("Loading video...")
                 } else {
+                    videoPreview
+                    playPauseButton
                     trimTimeDisplay
                     thumbnailScrubber
                     processingSection
@@ -34,18 +37,50 @@ struct VideoTrimView: View {
             .navigationTitle("Trim Video")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .disabled(isProcessing)
+                    Button("Cancel") {
+                        playerController?.pause()
+                        dismiss()
+                    }
+                    .disabled(isProcessing)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isProcessing ? "Processing..." : "Process") {
+                        playerController?.pause()
                         Task { await startProcessing() }
                     }
                     .disabled(isProcessing)
                 }
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 700, minHeight: 600)
+        #else
+        .presentationDetents([.large])
+        #endif
         .task { await loadVideoInfo() }
+    }
+
+    // MARK: - Video Preview
+
+    private var videoPreview: some View {
+        Group {
+            if let controller = playerController {
+                VideoLayerView(player: controller.player)
+                    .aspectRatio(16 / 9, contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    private var playPauseButton: some View {
+        Button {
+            playerController?.togglePlayPause()
+        } label: {
+            Image(systemName: playerController?.isPlaying == true ? "pause.fill" : "play.fill")
+                .font(.title2)
+                .frame(width: 44, height: 32)
+        }
+        .buttonStyle(.bordered)
     }
 
     private var trimTimeDisplay: some View {
@@ -84,8 +119,8 @@ struct VideoTrimView: View {
                 }
 
                 // Dimmed regions outside trim
-                let startX = width * trimStart / duration
-                let endX = width * trimEnd / duration
+                let startX = duration > 0 ? width * trimStart / duration : 0
+                let endX = duration > 0 ? width * trimEnd / duration : width
 
                 Rectangle().fill(.black.opacity(0.5))
                     .frame(width: max(startX, 0), height: scrubberHeight)
@@ -94,11 +129,22 @@ struct VideoTrimView: View {
                     .frame(width: max(width - endX, 0), height: scrubberHeight)
                     .offset(x: endX)
 
+                // Playhead indicator
+                if let controller = playerController, duration > 0 {
+                    let playheadX = width * controller.currentTime / duration
+                    Rectangle()
+                        .fill(.white)
+                        .frame(width: 2, height: scrubberHeight)
+                        .offset(x: playheadX - 1)
+                        .allowsHitTesting(false)
+                }
+
                 // Start handle
                 trimHandle(color: .yellow, xPosition: startX)
                     .gesture(DragGesture().onChanged { v in
                         let newStart = max(0, min(v.location.x / width * duration, trimEnd - 0.5))
                         trimStart = newStart
+                        playerController?.seek(to: newStart)
                     })
 
                 // End handle
@@ -106,7 +152,15 @@ struct VideoTrimView: View {
                     .gesture(DragGesture().onChanged { v in
                         let newEnd = max(trimStart + 0.5, min(v.location.x / width * duration, duration))
                         trimEnd = newEnd
+                        playerController?.seek(to: newEnd)
                     })
+            }
+            // Tap to seek
+            .contentShape(Rectangle())
+            .onTapGesture { location in
+                guard duration > 0 else { return }
+                let tappedTime = max(0, min(location.x / width * duration, duration))
+                playerController?.seek(to: tappedTime)
             }
         }
         .frame(height: scrubberHeight)
@@ -148,6 +202,7 @@ struct VideoTrimView: View {
             duration = dur.seconds
             trimEnd = dur.seconds
         }
+        playerController = PlayerController(url: videoURL)
         await generateThumbnails(asset: asset)
         isLoading = false
     }
