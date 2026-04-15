@@ -109,10 +109,19 @@ struct PlayerContainerView: View {
         }
 
         // Load waveform peaks
+        let waveformURL: URL?
         if let waveformPath = project.waveformPeaksRelativePath {
-            let waveformURL = project.directoryURL.appendingPathComponent(waveformPath)
-            if let data = try? Data(contentsOf: waveformURL) {
-                waveform = try? JSONDecoder().decode(WaveformPeaks.self, from: data)
+            waveformURL = project.directoryURL.appendingPathComponent(waveformPath)
+        } else {
+            // Fallback for projects prepared before waveformPeaksRelativePath was added
+            let fallbackURL = project.directoryURL.appendingPathComponent("waveform_peaks.json")
+            waveformURL = FileManager.default.fileExists(atPath: fallbackURL.path) ? fallbackURL : nil
+        }
+        if let url = waveformURL, let data = try? Data(contentsOf: url) {
+            waveform = try? JSONDecoder().decode(WaveformPeaks.self, from: data)
+            // Backfill the relative path for future loads
+            if waveform != nil && project.waveformPeaksRelativePath == nil {
+                project.waveformPeaksRelativePath = "waveform_peaks.json"
             }
         }
     }

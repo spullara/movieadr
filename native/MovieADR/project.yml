@@ -45,6 +45,10 @@ targets:
         com.apple.security.device.microphone: true
         com.apple.security.network.client: true
         com.apple.security.files.downloads.read-write: true
+# NOTE: GPU validation is disabled in the generated xcscheme files
+# (enableGPUValidationMode=0, enableGPUFrameCaptureMode=3).
+# xcodegen does not support these keys natively, so they are set
+# directly in the xcscheme XML files under xcshareddata/xcschemes/.
 schemes:
   MovieADR_macOS:
     build:
