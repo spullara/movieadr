@@ -245,6 +245,7 @@ struct VideoTrimView: View {
             // Store relative paths
             project.instrumentalRelativePath = "instrumental.wav"
             project.vocalsRelativePath = "vocals.wav"
+            project.waveformPeaksRelativePath = "waveform_peaks.json"
 
             // Load timestamps into project
             let timestampsURL = project.directoryURL.appendingPathComponent("word_timestamps.json")
