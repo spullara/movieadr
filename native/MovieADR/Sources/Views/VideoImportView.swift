@@ -11,6 +11,18 @@ struct VideoImportView: View {
     @State private var showTrimView = false
     @State private var importError: String?
 
+    #if os(macOS)
+    @State private var youtubeURL = ""
+    @State private var downloadService = YouTubeDownloadService()
+    @State private var showYtDlpMissing = false
+    #endif
+
+    #if os(macOS)
+    @State private var youtubeURL = ""
+    @State private var downloadService = YouTubeDownloadService()
+    @State private var showYtDlpMissing = false
+    #endif
+
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "video.badge.plus")
@@ -30,6 +42,50 @@ struct VideoImportView: View {
                     .padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
+
+            #if os(macOS)
+            youtubeSection
+            #endif
+
+            #if os(macOS)
+            Divider()
+                .padding(.vertical, 8)
+
+            Text("Or download from YouTube")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                Image(systemName: "play.rectangle.fill")
+                    .foregroundStyle(.red)
+                TextField("YouTube URL", text: $youtubeURL)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { Task { await startYouTubeDownload() } }
+                Button(action: { Task { await startYouTubeDownload() } }) {
+                    Label("Download", systemImage: "arrow.down.circle.fill")
+                }
+                .buttonStyle(.bordered)
+                .disabled(youtubeURL.isEmpty || downloadService.isDownloading)
+            }
+            .frame(maxWidth: 400)
+
+            if downloadService.isDownloading {
+                VStack(spacing: 4) {
+                    ProgressView(value: downloadService.progress)
+                        .frame(maxWidth: 400)
+                    Text(downloadService.statusMessage)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let error = downloadService.error {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+                    .lineLimit(2)
+            }
+            #endif
 
             if let error = importError {
                 Text(error)
@@ -52,6 +108,13 @@ struct VideoImportView: View {
                 )
             }
         }
+        #if os(macOS)
+        .alert("yt-dlp Not Installed", isPresented: $showYtDlpMissing) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Install yt-dlp via Homebrew:\nbrew install yt-dlp")
+        }
+        #endif
     }
 
     private func handleImport(_ result: Result<[URL], Error>) {
@@ -93,4 +156,29 @@ struct VideoImportView: View {
             importError = "Import failed: \(error.localizedDescription)"
         }
     }
+
+    #if os(macOS)
+    @MainActor
+    private func startYouTubeDownload() async {
+        let urlString = youtubeURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !urlString.isEmpty else { return }
+
+        guard YouTubeDownloadService.isYtDlpInstalled() else {
+            showYtDlpMissing = true
+            return
+        }
+
+        do {
+            let projectDir = project.directoryURL
+            try FileManager.default.createDirectory(at: projectDir, withIntermediateDirectories: true)
+            let videoURL = try await downloadService.download(url: urlString, to: projectDir)
+            project.videoRelativePath = videoURL.lastPathComponent
+            importedVideoURL = videoURL
+            youtubeURL = ""
+            showTrimView = true
+        } catch {
+            importError = "YouTube download failed: \(error.localizedDescription)"
+        }
+    }
+    #endif
 }

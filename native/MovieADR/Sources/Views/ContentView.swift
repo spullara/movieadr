@@ -6,14 +6,11 @@ struct ContentView: View {
     @Query(sort: \Project.createdAt, order: .reverse) private var projects: [Project]
     @State private var selectedProject: Project?
 
-    #if os(macOS)
-    @State private var youtubeURL = ""
-    @State private var downloadService = YouTubeDownloadService()
-    @State private var showYtDlpMissing = false
-    @State private var showTrimView = false
-    @State private var downloadedVideoURL: URL?
-    @State private var downloadedProject: Project?
-    #endif
+    @State private var renamingProject: Project?
+    @State private var renameText = ""
+    @State private var showRenameAlert = false
+    @State private var newProjectName = ""
+    @State private var showNewProjectAlert = false
 
     var body: some View {
         NavigationSplitView {
@@ -28,6 +25,20 @@ struct ContentView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    .contextMenu {
+                        Button("Rename") {
+                            renamingProject = project
+                            renameText = project.name
+                            showRenameAlert = true
+                        }
+                        Button("Delete", role: .destructive) {
+                            try? FileManager.default.removeItem(at: project.directoryURL)
+                            if selectedProject?.id == project.id {
+                                selectedProject = nil
+                            }
+                            modelContext.delete(project)
+                        }
+                    }
                 }
                 .overlay {
                     if projects.isEmpty {
@@ -39,9 +50,6 @@ struct ContentView: View {
                     }
                 }
 
-                #if os(macOS)
-                youtubeDownloadSection
-                #endif
             }
             .navigationTitle("Projects")
             .toolbar {
@@ -63,100 +71,29 @@ struct ContentView: View {
                 )
             }
         }
-        #if os(macOS)
-        .alert("yt-dlp Not Installed", isPresented: $showYtDlpMissing) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Install yt-dlp via Homebrew:\nbrew install yt-dlp")
-        }
-        .sheet(isPresented: $showTrimView) {
-            if let url = downloadedVideoURL, let project = downloadedProject {
-                VideoTrimView(
-                    videoURL: url,
-                    project: Binding(
-                        get: { project },
-                        set: { _ in }
-                    )
-                )
+        .alert("Rename Project", isPresented: $showRenameAlert) {
+            TextField("Project name", text: $renameText)
+            Button("Save") {
+                renamingProject?.name = renameText
             }
+            Button("Cancel", role: .cancel) {}
         }
-        #endif
+        .alert("New Project", isPresented: $showNewProjectAlert) {
+            TextField("Project name", text: $newProjectName)
+            Button("Create") {
+                let project = Project(name: newProjectName.isEmpty ? "New Project" : newProjectName)
+                modelContext.insert(project)
+                selectedProject = project
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     private func addProject() {
-        let project = Project(name: "New Project")
-        modelContext.insert(project)
-        selectedProject = project
+        newProjectName = ""
+        showNewProjectAlert = true
     }
 
-    #if os(macOS)
-    private var youtubeDownloadSection: some View {
-        VStack(spacing: 8) {
-            Divider()
-            HStack(spacing: 6) {
-                Image(systemName: "play.rectangle.fill")
-                    .foregroundStyle(.red)
-                TextField("YouTube URL", text: $youtubeURL)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { Task { await startYouTubeDownload() } }
-                Button(action: { Task { await startYouTubeDownload() } }) {
-                    Image(systemName: "arrow.down.circle.fill")
-                }
-                .buttonStyle(.borderless)
-                .disabled(youtubeURL.isEmpty || downloadService.isDownloading)
-            }
-
-            if downloadService.isDownloading {
-                VStack(spacing: 4) {
-                    ProgressView(value: downloadService.progress)
-                    Text(downloadService.statusMessage)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if let error = downloadService.error {
-                Text(error)
-                    .font(.caption2)
-                    .foregroundStyle(.red)
-                    .lineLimit(2)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-
-    @MainActor
-    private func startYouTubeDownload() async {
-        let urlString = youtubeURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !urlString.isEmpty else { return }
-
-        guard YouTubeDownloadService.isYtDlpInstalled() else {
-            showYtDlpMissing = true
-            return
-        }
-
-        let project = Project(name: "YouTube Download")
-        modelContext.insert(project)
-
-        do {
-            let videoURL = try await downloadService.download(
-                url: urlString,
-                to: project.directoryURL
-            )
-            project.videoRelativePath = videoURL.lastPathComponent
-            downloadedVideoURL = videoURL
-            downloadedProject = project
-            selectedProject = project
-            youtubeURL = ""
-            showTrimView = true
-        } catch {
-            // Error is shown via downloadService.error
-            // Clean up the empty project on failure
-            modelContext.delete(project)
-        }
-    }
-    #endif
 }
 
 #Preview {

@@ -8,6 +8,8 @@ struct ProjectDetailView: View {
     @State private var showTrimView = false
     @State private var pipeline = PreparationPipeline()
     @State private var isProcessing = false
+    @State private var renameText = ""
+    @State private var showRenameAlert = false
 
     var body: some View {
         Group {
@@ -21,6 +23,23 @@ struct ProjectDetailView: View {
             }
         }
         .navigationTitle(project.name)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    renameText = project.name
+                    showRenameAlert = true
+                } label: {
+                    Label("Rename", systemImage: "pencil")
+                }
+            }
+        }
+        .alert("Rename Project", isPresented: $showRenameAlert) {
+            TextField("Project name", text: $renameText)
+            Button("Save") {
+                project.name = renameText
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         .sheet(isPresented: $showTrimView) {
             if let videoURL = project.videoURL {
                 VideoTrimView(
