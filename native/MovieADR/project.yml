@@ -45,6 +45,31 @@ targets:
         com.apple.security.device.microphone: true
         com.apple.security.network.client: true
         com.apple.security.files.downloads.read-write: true
+schemes:
+  MovieADR_macOS:
+    build:
+      targets:
+        MovieADR_macOS: all
+    run:
+      config: Debug
+      diagnostics:
+        mainThreadChecker: true
+      environmentVariables:
+        - variable: MTL_DEBUG_LAYER
+          value: "0"
+          isEnabled: true
+  MovieADR_iOS:
+    build:
+      targets:
+        MovieADR_iOS: all
+    run:
+      config: Debug
+      diagnostics:
+        mainThreadChecker: true
+      environmentVariables:
+        - variable: MTL_DEBUG_LAYER
+          value: "0"
+          isEnabled: true
 packages:
   WhisperKit:
     url: https://github.com/argmaxinc/WhisperKit.git
