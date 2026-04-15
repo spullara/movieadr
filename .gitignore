@@ -4,3 +4,9 @@ dist/
 *.local
 venv/
 projects/
+
+# Swift / Xcode
+.build/
+.swiftpm/
+*.xcuserdata
+DerivedData/
