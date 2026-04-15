@@ -52,78 +52,113 @@ final class PreparationPipeline {
         try fm.createDirectory(at: projectDir, withIntermediateDirectories: true)
 
         // Step 1: Download/load models
+        print("[Pipeline] Starting step: Downloading Models")
         try await runStep(.downloadingModels) {
             try await self.loadModels()
         }
+        print("[Pipeline] Completed step: Downloading Models")
 
         // Step 2: Extract audio
+        print("[Pipeline] Starting step: Extracting Audio")
         let audioResult = try await runStep(.extractingAudio) {
             try await AudioExtractor.extract(
                 from: videoURL,
                 to: projectDir,
                 trimRange: trimRange,
                 progress: { [weak self] p in
-                    Task { @MainActor in self?.updateStepProgress(p) }
+                    guard let self else { return }
+                    Task { @MainActor in
+                        self.updateStepProgress(p)
+                        self.statusMessage = "Extracting audio… \(Int(p * 100))%"
+                    }
                 }
             )
         }
+        print("[Pipeline] Completed step: Extracting Audio")
 
         // Step 3: Transcribe with WhisperKit
+        print("[Pipeline] Starting step: Transcribing Speech")
         let words = try await runStep(.transcribing) {
             try await self.transcriptionService.transcribe(
                 audioURL: audioResult.whisperAudioURL,
                 progress: { [weak self] p in
-                    Task { @MainActor in self?.updateStepProgress(p) }
+                    guard let self else { return }
+                    Task { @MainActor in
+                        self.updateStepProgress(p)
+                        self.statusMessage = "Transcribing… \(Int(p * 100))%"
+                    }
                 }
             )
         }
+        print("[Pipeline] Completed step: Transcribing Speech")
 
         // Save timestamps JSON
         let timestampsURL = projectDir.appendingPathComponent("word_timestamps.json")
         try TranscriptionService.saveTimestamps(words, to: timestampsURL)
 
         // Step 4: Separate vocals with Demucs
+        print("[Pipeline] Starting step: Separating Vocals")
         _ = try await runStep(.separatingVocals) {
             try await self.separationService.separate(
                 audioURL: audioResult.demucsAudioURL,
                 outputDir: projectDir,
                 progress: { [weak self] p in
-                    Task { @MainActor in self?.updateStepProgress(p) }
+                    guard let self else { return }
+                    Task { @MainActor in
+                        self.updateStepProgress(p)
+                        self.statusMessage = "Separating vocals… \(Int(p * 100))%"
+                    }
                 }
             )
         }
+        print("[Pipeline] Completed step: Separating Vocals")
 
         // Step 5: Generate waveform peaks
+        print("[Pipeline] Starting step: Generating Waveform")
         try await runStep(.generatingWaveform) {
             let peaks = try WaveformGenerator.generatePeaks(
                 from: audioResult.demucsAudioURL,
                 progress: { [weak self] p in
-                    Task { @MainActor in self?.updateStepProgress(p) }
+                    guard let self else { return }
+                    Task { @MainActor in
+                        self.updateStepProgress(p)
+                        self.statusMessage = "Generating waveform… \(Int(p * 100))%"
+                    }
                 }
             )
             let peaksURL = projectDir.appendingPathComponent("waveform_peaks.json")
             try WaveformGenerator.savePeaks(peaks, to: peaksURL)
             return peaks
         }
+        print("[Pipeline] Completed step: Generating Waveform")
 
-        await MainActor.run {
-            currentStep = .complete
-            overallProgress = 1.0
-            statusMessage = "Preparation complete"
-        }
+        currentStep = .complete
+        overallProgress = 1.0
+        statusMessage = "Preparation complete"
+        print("[Pipeline] All steps complete")
     }
 
     private func loadModels() async throws {
         // Load WhisperKit model
         statusMessage = "Loading WhisperKit model..."
+        print("[Pipeline] Loading WhisperKit model...")
         try await transcriptionService.loadModel { [weak self] p in
-            Task { @MainActor in self?.updateStepProgress(p * 0.5) }
+            guard let self else { return }
+            Task { @MainActor in
+                self.updateStepProgress(p * 0.5)
+                self.statusMessage = "Loading WhisperKit model… \(Int(p * 100))%"
+            }
         }
 
         // Load Demucs model
         statusMessage = "Loading Demucs model..."
+        print("[Pipeline] Loading Demucs model...")
         try await separationService.loadModel { [weak self] p in
-            Task { @MainActor in self?.updateStepProgress(0.5 + p * 0.5) }
+            guard let self else { return }
+            Task { @MainActor in
+                self.updateStepProgress(0.5 + p * 0.5)
+                self.statusMessage = "Loading Demucs model… \(Int(p * 100))%"
+            }
         }
     }
 
