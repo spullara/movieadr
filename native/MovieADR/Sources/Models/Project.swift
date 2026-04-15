@@ -51,4 +51,10 @@ final class Project {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return docs.appending(path: "Projects/\(id.uuidString)")
     }
+
+    /// Returns the full URL to the imported video, if one exists
+    var videoURL: URL? {
+        guard let relativePath = videoRelativePath else { return nil }
+        return directoryURL.appendingPathComponent(relativePath)
+    }
 }

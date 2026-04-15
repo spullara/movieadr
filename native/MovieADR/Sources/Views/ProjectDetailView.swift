@@ -1,31 +1,119 @@
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct ProjectDetailView: View {
     @Bindable var project: Project
     @State private var showExportSheet = false
+    @State private var showTrimView = false
+    @State private var pipeline = PreparationPipeline()
+    @State private var isProcessing = false
 
     var body: some View {
         Group {
             if project.isPrepared {
                 preparedView
             } else if project.videoRelativePath != nil {
-                VStack(spacing: 12) {
-                    Image(systemName: "waveform.and.mic")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.secondary)
-                    Text("Video imported. Processing needed.")
-                        .font(.headline)
-                    Text("Open the project to trim and process the video.")
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
+                needsProcessingView
             } else {
                 VideoImportView(project: Binding(get: { project }, set: { _ in }))
                     .padding()
             }
         }
         .navigationTitle(project.name)
+        .sheet(isPresented: $showTrimView) {
+            if let videoURL = project.videoURL {
+                VideoTrimView(
+                    videoURL: videoURL,
+                    project: Binding(get: { project }, set: { _ in })
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var needsProcessingView: some View {
+        VStack(spacing: 16) {
+            if isProcessing {
+                // Progress view while pipeline is running
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.large)
+
+                    Text(pipeline.statusMessage.isEmpty ? "Processing..." : pipeline.statusMessage)
+                        .font(.headline)
+
+                    ProgressView(value: pipeline.overallProgress)
+                        .progressViewStyle(.linear)
+                        .frame(maxWidth: 300)
+
+                    Text("\(Int(pipeline.overallProgress * 100))%")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+
+                    if let error = pipeline.error {
+                        Text(error.localizedDescription)
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+            } else {
+                Image(systemName: "waveform.and.mic")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.secondary)
+
+                Text("Video imported. Ready to process.")
+                    .font(.headline)
+
+                Text("Trim the video first, or process the full video directly.")
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                HStack(spacing: 16) {
+                    Button {
+                        showTrimView = true
+                    } label: {
+                        Label("Trim & Process", systemImage: "timeline.selection")
+                            .font(.headline)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button {
+                        Task { await processFullVideo() }
+                    } label: {
+                        Label("Process Full Video", systemImage: "play.fill")
+                            .font(.headline)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
+        .padding()
+    }
+
+    private func processFullVideo() async {
+        guard let videoURL = project.videoURL else { return }
+        isProcessing = true
+        do {
+            try await pipeline.run(
+                videoURL: videoURL,
+                projectDir: project.directoryURL
+            )
+            project.isPrepared = true
+            project.instrumentalRelativePath = "instrumental.wav"
+            project.vocalsRelativePath = "vocals.wav"
+            let timestampsURL = project.directoryURL.appendingPathComponent("word_timestamps.json")
+            project.timestampsJSON = try Data(contentsOf: timestampsURL)
+        } catch {
+            // Error is shown via pipeline.error
+        }
+        isProcessing = false
     }
 
     @ViewBuilder
