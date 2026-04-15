@@ -1,0 +1,112 @@
+import AVFoundation
+import SwiftUI
+
+/// Observable object that owns the AVPlayer and publishes the current playback time.
+@Observable
+final class PlayerController {
+    let player: AVPlayer
+    private(set) var currentTime: Double = 0
+    private(set) var duration: Double = 0
+    private(set) var isPlaying: Bool = false
+
+    private var timeObserver: Any?
+
+    init(url: URL) {
+        self.player = AVPlayer(url: url)
+        setupObservers()
+    }
+
+    deinit {
+        if let obs = timeObserver {
+            player.removeTimeObserver(obs)
+        }
+    }
+
+    func play() {
+        player.play()
+        isPlaying = true
+    }
+
+    func pause() {
+        player.pause()
+        isPlaying = false
+    }
+
+    func togglePlayPause() {
+        isPlaying ? pause() : play()
+    }
+
+    func seek(to time: Double) {
+        let cmTime = CMTime(seconds: time, preferredTimescale: 600)
+        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        currentTime = time
+    }
+
+    private func setupObservers() {
+        // High-frequency time observer for smooth animation (~60fps)
+        let interval = CMTime(seconds: 1.0 / 60.0, preferredTimescale: 600)
+        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            guard let self else { return }
+            self.currentTime = time.seconds
+            self.isPlaying = self.player.timeControlStatus == .playing
+        }
+
+        // Observe duration
+        Task { @MainActor in
+            if let item = player.currentItem,
+               let dur = try? await item.asset.load(.duration) {
+                duration = dur.seconds
+            }
+        }
+    }
+}
+
+// MARK: - Platform Video Layer View
+
+#if os(iOS)
+struct VideoLayerView: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> PlayerUIView {
+        PlayerUIView(player: player)
+    }
+
+    func updateUIView(_ uiView: PlayerUIView, context: Context) {}
+
+    class PlayerUIView: UIView {
+        override class var layerClass: AnyClass { AVPlayerLayer.self }
+
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+
+        init(player: AVPlayer) {
+            super.init(frame: .zero)
+            playerLayer.player = player
+            playerLayer.videoGravity = .resizeAspect
+            backgroundColor = .black
+        }
+
+        required init?(coder: NSCoder) { fatalError() }
+    }
+}
+#else
+struct VideoLayerView: NSViewRepresentable {
+    let player: AVPlayer
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        view.wantsLayer = true
+        let playerLayer = AVPlayerLayer(player: player)
+        playerLayer.videoGravity = .resizeAspect
+        playerLayer.backgroundColor = NSColor.black.cgColor
+        playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+        view.layer?.addSublayer(playerLayer)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let playerLayer = nsView.layer?.sublayers?.first as? AVPlayerLayer {
+            playerLayer.frame = nsView.bounds
+        }
+    }
+}
+#endif
