@@ -201,17 +201,37 @@ export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
                 <div style={{ fontWeight: 600 }}>{p.name}</div>
                 <div style={{ color: '#888', fontSize: '0.8rem' }}>{p.videoFileName}</div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  fontSize: '0.8rem', fontWeight: 500,
-                  color: p.status === 'ready' ? '#22c55e' : p.status === 'error' ? '#ef4444' : '#f59e0b',
-                }}>
-                  {STATUS_LABELS[p.status] || p.status}
-                </div>
-                {p.status !== 'ready' && p.status !== 'error' && (
-                  <div style={{ fontSize: '0.75rem', color: '#666' }}>{p.progress}%</div>
+              <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {(p.status === 'ready' || p.status === 'error') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fetch(`/api/projects/${p.id}/reprocess`, { method: 'POST' })
+                        .then(() => loadProjects())
+                        .catch(() => {});
+                    }}
+                    title="Re-run preparation pipeline"
+                    style={{
+                      padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #555',
+                      background: '#333', color: '#ccc', cursor: 'pointer', fontSize: '0.75rem',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    🔄 Reprocess
+                  </button>
                 )}
-                {p.error && <div style={{ fontSize: '0.75rem', color: '#ef4444' }}>{p.error}</div>}
+                <div>
+                  <div style={{
+                    fontSize: '0.8rem', fontWeight: 500,
+                    color: p.status === 'ready' ? '#22c55e' : p.status === 'error' ? '#ef4444' : '#f59e0b',
+                  }}>
+                    {STATUS_LABELS[p.status] || p.status}
+                  </div>
+                  {p.status !== 'ready' && p.status !== 'error' && (
+                    <div style={{ fontSize: '0.75rem', color: '#666' }}>{p.progress}%</div>
+                  )}
+                  {p.error && <div style={{ fontSize: '0.75rem', color: '#ef4444' }}>{p.error}</div>}
+                </div>
               </div>
             </div>
           ))}

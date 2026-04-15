@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { stat, readdir, readFile } from 'fs/promises';
+import { stat, readdir, readFile, rm } from 'fs/promises';
 import { createReadStream, existsSync } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -234,6 +234,63 @@ projectsRouter.get('/projects/:id/events', (req, res) => {
   req.on('close', () => {
     projectEvents.off('progress', onProgress);
   });
+});
+
+/** POST /api/projects/:id/reprocess — Re-run preparation pipeline on an existing project */
+projectsRouter.post('/projects/:id/reprocess', async (req, res) => {
+  try {
+    const project = getProject(req.params.id);
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    // Don't allow reprocessing if already in progress
+    if (project.status !== 'ready' && project.status !== 'error' && project.status !== 'pending') {
+      res.status(409).json({ error: 'Project is currently being processed' });
+      return;
+    }
+
+    // Verify input video still exists
+    if (!existsSync(project.videoPath)) {
+      res.status(400).json({ error: 'Input video file no longer exists' });
+      return;
+    }
+
+    // Reset status
+    updateProjectStatus(project.id, 'pending', 0);
+    project.error = undefined;
+
+    // Delete old preparation output files (keep input video and takes)
+    const filesToDelete = [
+      'audio.wav',
+      'audio_full.wav',
+      'word_timestamps.json',
+      'instrumental.wav',
+      'waveform_peaks.json',
+      '_whisper_script.py',
+      '_waveform_script.py',
+    ];
+
+    const dirsToDelete = ['htdemucs'];
+
+    await Promise.allSettled([
+      ...filesToDelete.map(f =>
+        rm(path.join(project.projectDir, f), { force: true })
+      ),
+      ...dirsToDelete.map(d =>
+        rm(path.join(project.projectDir, d), { recursive: true, force: true })
+      ),
+    ]);
+
+    // Re-run pipeline in background
+    runPipeline(project);
+
+    res.json({ id: project.id, status: 'pending', progress: 0 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
+  }
 });
 
 /** GET /api/projects/:id/video — Stream the original video file with range support */
