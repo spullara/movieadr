@@ -42,28 +42,23 @@ actor VocalSeparationService {
         let vocalsURL = outputDir.appendingPathComponent("vocals.wav")
 
         return try await Task.detached(priority: .userInitiated) {
-            try autoreleasepool {
-                try await withCheckedThrowingContinuation { continuation in
-                    sep.separate(
-                        fileAt: audioURL,
-                        cancelToken: nil,
-                        interpolateProgress: true,
-                        progress: { demucsProgress in
-                            progress(Double(demucsProgress.fraction))
-                        },
-                        completion: { result in
+            try await withCheckedThrowingContinuation { continuation in
+                sep.separate(
+                    fileAt: audioURL,
+                    cancelToken: nil,
+                    interpolateProgress: true,
+                    progress: { demucsProgress in
+                        progress(Double(demucsProgress.fraction))
+                    },
+                    completion: { result in
+                        autoreleasepool {
                             switch result {
                             case .success(let separationResult):
                                 do {
-                                    // Save instrumental (no_vocals) track
-                                    // htdemucs sources: drums, bass, other, vocals
-                                    // We need to mix drums + bass + other for instrumental
                                     let stems = separationResult.stems
                                     if let noVocals = stems["no_vocals"] {
-                                        // Two-stem model: direct no_vocals output
                                         try AudioIO.writeWAV(noVocals, to: instrumentalURL)
                                     } else {
-                                        // Four-stem model: mix drums + bass + other
                                         let instrumental = try self.mixStems(
                                             stems: stems,
                                             names: ["drums", "bass", "other"],
@@ -73,7 +68,6 @@ actor VocalSeparationService {
                                         try AudioIO.writeWAV(instrumental, to: instrumentalURL)
                                     }
 
-                                    // Save vocals
                                     if let vocals = stems["vocals"] {
                                         try AudioIO.writeWAV(vocals, to: vocalsURL)
                                     }
@@ -89,8 +83,8 @@ actor VocalSeparationService {
                                 continuation.resume(throwing: error)
                             }
                         }
-                    )
-                }
+                    }
+                )
             }
         }.value
     }
