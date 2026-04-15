@@ -47,6 +47,10 @@ export function listProjects(): ProjectEntry[] {
   return Array.from(projects.values());
 }
 
+export function deleteProject(id: string): boolean {
+  return projects.delete(id);
+}
+
 export function updateProjectStatus(
   id: string,
   status: PreparationStatus,

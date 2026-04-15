@@ -220,6 +220,25 @@ export function ProjectList({ onSelect }: { onSelect: (id: string) => void }) {
                     🔄 Reprocess
                   </button>
                 )}
+                {(p.status === 'ready' || p.status === 'error' || p.status === 'pending') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!confirm('Delete this project and all its files?')) return;
+                      fetch(`/api/projects/${p.id}`, { method: 'DELETE' })
+                        .then(() => loadProjects())
+                        .catch(() => {});
+                    }}
+                    title="Delete project"
+                    style={{
+                      padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #555',
+                      background: '#333', color: '#ccc', cursor: 'pointer', fontSize: '0.75rem',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    🗑️
+                  </button>
+                )}
                 <div>
                   <div style={{
                     fontSize: '0.8rem', fontWeight: 500,

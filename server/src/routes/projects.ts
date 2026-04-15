@@ -4,7 +4,7 @@ import { createReadStream, existsSync } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import multer from 'multer';
-import { createProjectDir, registerProject, getProject, listProjects, projectEvents, updateProjectStatus } from '../services/projects.js';
+import { createProjectDir, registerProject, getProject, listProjects, deleteProject, projectEvents, updateProjectStatus } from '../services/projects.js';
 import { runPipeline } from '../services/pipeline.js';
 
 export const projectsRouter = Router();
@@ -287,6 +287,28 @@ projectsRouter.post('/projects/:id/reprocess', async (req, res) => {
     runPipeline(project);
 
     res.json({ id: project.id, status: 'pending', progress: 0 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
+  }
+});
+
+/** DELETE /api/projects/:id — Delete a project and its files */
+projectsRouter.delete('/projects/:id', async (req, res) => {
+  try {
+    const project = getProject(req.params.id);
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    // Delete the entire project directory
+    await rm(project.projectDir, { recursive: true, force: true });
+
+    // Remove from in-memory map
+    deleteProject(req.params.id);
+
+    res.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: message });
