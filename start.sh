@@ -21,7 +21,7 @@ python -c "
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 import whisper
-whisper.load_model('base')
+whisper.load_model('large-v3')
 print('Whisper model ready.')
 "
 

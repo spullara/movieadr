@@ -73,7 +73,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 import json, sys
 import whisper
 
-model = whisper.load_model("base")
+model = whisper.load_model("large-v3")
 result = model.transcribe(sys.argv[1], word_timestamps=True)
 
 words = []
