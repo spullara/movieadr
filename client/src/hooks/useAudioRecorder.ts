@@ -43,7 +43,12 @@ export function useAudioRecorder() {
     };
 
     source.connect(processor);
-    processor.connect(ctx.destination);
+    // Connect processor through a silent gain node so onaudioprocess fires
+    // without playing mic input back through speakers (which causes feedback)
+    const silentGain = ctx.createGain();
+    silentGain.gain.value = 0;
+    processor.connect(silentGain);
+    silentGain.connect(ctx.destination);
 
     // Level metering loop
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
