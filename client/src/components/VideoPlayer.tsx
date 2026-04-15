@@ -180,6 +180,9 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
   const takeAudioRef = useRef<HTMLAudioElement | null>(null);
   const [exports, setExports] = useState<ExportInfo[]>([]);
   const [exporting, setExporting] = useState(false);
+  const [showHeadphoneWarning, setShowHeadphoneWarning] = useState(false);
+  const headphoneWarningShownRef = useRef(false);
+  const pendingRecordRef = useRef(false);
 
   const { isRecording, audioLevel, startRecording, stopRecording } = useAudioRecorder();
 
@@ -323,16 +326,38 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
     }).catch(console.error);
   }, [projectId]);
 
+  // Helper: stop any playing take audio
+  const stopTakePlayback = useCallback(() => {
+    if (takeAudioRef.current) {
+      takeAudioRef.current.pause();
+      takeAudioRef.current = null;
+    }
+    setPlayingTakeId(null);
+  }, []);
+
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
+    stopTakePlayback();
     if (video.paused) video.play();
     else video.pause();
-  }, []);
+  }, [stopTakePlayback]);
 
   const handleRecordPlay = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
+
+    if (!isRecording) {
+      // Show headphone warning on first recording attempt per session
+      if (!headphoneWarningShownRef.current) {
+        headphoneWarningShownRef.current = true;
+        pendingRecordRef.current = true;
+        setShowHeadphoneWarning(true);
+        return;
+      }
+    }
+
+    stopTakePlayback();
 
     if (isRecording) {
       // Stop recording and video
@@ -360,7 +385,20 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
       await startRecording();
       video.play();
     }
-  }, [isRecording, stopRecording, startRecording, projectId, fetchTakes]);
+  }, [isRecording, stopRecording, startRecording, projectId, fetchTakes, stopTakePlayback]);
+
+  // Continue recording after headphone warning is dismissed
+  const handleHeadphoneWarningContinue = useCallback(async () => {
+    setShowHeadphoneWarning(false);
+    if (!pendingRecordRef.current) return;
+    pendingRecordRef.current = false;
+    const video = videoRef.current;
+    if (!video) return;
+    stopTakePlayback();
+    video.currentTime = 0;
+    await startRecording();
+    video.play();
+  }, [startRecording, stopTakePlayback]);
 
   // Stop recording when video ends naturally
   useEffect(() => {
@@ -391,6 +429,7 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
   }, [isRecording, stopRecording, projectId, fetchTakes]);
 
   const playTake = useCallback((takeId: string) => {
+    // Stop any existing take playback
     if (takeAudioRef.current) {
       takeAudioRef.current.pause();
       takeAudioRef.current = null;
@@ -399,8 +438,16 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
       setPlayingTakeId(null);
       return;
     }
+    // Pause video and instrumental before playing a take
+    const video = videoRef.current;
+    if (video && !video.paused) {
+      video.pause();
+    }
     const audio = new Audio(`/api/projects/${projectId}/takes/${takeId}/audio`);
-    audio.onended = () => setPlayingTakeId(null);
+    audio.onended = () => {
+      setPlayingTakeId(null);
+      takeAudioRef.current = null;
+    };
     audio.play();
     takeAudioRef.current = audio;
     setPlayingTakeId(takeId);
@@ -477,6 +524,39 @@ export function VideoPlayer({ projectId, onBack }: VideoPlayerProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#000' }}>
+      {/* Headphone warning modal */}
+      {showHeadphoneWarning && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.75)',
+        }}>
+          <div style={{
+            background: '#1a1a1a', border: '1px solid #444', borderRadius: '8px',
+            padding: '2rem', maxWidth: '24rem', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🎧</div>
+            <div style={{ color: '#fff', fontSize: '1rem', marginBottom: '0.5rem', fontWeight: 600 }}>
+              Use headphones while recording
+            </div>
+            <div style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+              If the instrumental plays through speakers, your mic will pick it up and create echo in the exported audio.
+            </div>
+            <button
+              onClick={handleHeadphoneWarningContinue}
+              style={{
+                ...btnStyle,
+                padding: '0.5rem 1.5rem',
+                fontSize: '1rem',
+                background: '#8b0000',
+                border: '1px solid #cc0000',
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '1rem',
         padding: '0.5rem 1rem', background: '#1a1a1a', borderBottom: '1px solid #333',
