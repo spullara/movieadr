@@ -114,16 +114,9 @@ struct TeleprompterCanvasView: View {
             guard let firstWord = line.first, let lastWord = line.last else { continue }
             if lastWord.end < visibleLeft || firstWord.start > visibleRight { continue }
 
-            // Alternate lines above and below baseY: 0, -1, +1, -2, +2, ...
-            let offset: CGFloat
-            if lineIdx == 0 {
-                offset = 0
-            } else if lineIdx % 2 == 1 {
-                offset = -CGFloat((lineIdx + 1) / 2) * lineSpacing  // odd lines go UP
-            } else {
-                offset = CGFloat(lineIdx / 2) * lineSpacing  // even lines go DOWN
-            }
-            let y = baseY + offset
+            // Alternate lines between just above and just below baseY (2 positions only)
+            let lineOffset = (lineIdx % 2 == 0) ? -fontSize * 0.8 : fontSize * 0.8
+            let y = baseY + lineOffset
 
             var nextMinX: CGFloat = -.infinity
             for word in line {
