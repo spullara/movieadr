@@ -17,12 +17,6 @@ struct VideoImportView: View {
     @State private var showYtDlpMissing = false
     #endif
 
-    #if os(macOS)
-    @State private var youtubeURL = ""
-    @State private var downloadService = YouTubeDownloadService()
-    @State private var showYtDlpMissing = false
-    #endif
-
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "video.badge.plus")
@@ -42,10 +36,6 @@ struct VideoImportView: View {
                     .padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
-
-            #if os(macOS)
-            youtubeSection
-            #endif
 
             #if os(macOS)
             Divider()
