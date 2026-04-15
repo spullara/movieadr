@@ -77,7 +77,8 @@ export async function startExport(project: ProjectEntry, takeId: string): Promis
   await access(takePath);
 
   const id = randomUUID();
-  const fileName = `${project.name}_export_${id.slice(0, 8)}.mp4`;
+  const safeName = project.name.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || 'export';
+  const fileName = `${safeName}_export_${id.slice(0, 8)}.mp4`;
   const mixedAudioPath = path.join(project.projectDir, `mixed_${id}.wav`);
   const outputPath = path.join(project.projectDir, fileName);
 
@@ -136,6 +137,7 @@ async function runExportPipeline(
     updateExportStatus(entry.id, 'done', 100);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[export] Pipeline failed for export ${entry.id}:`, message);
     updateExportStatus(entry.id, 'error', entry.progress, message);
   }
 }

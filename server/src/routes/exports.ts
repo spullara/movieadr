@@ -86,7 +86,8 @@ exportsRouter.get('/projects/:id/exports/:exportId', async (req, res) => {
       });
       createReadStream(exp.filePath).pipe(res);
       return;
-    } catch {
+    } catch (err) {
+      console.error(`[export] Download failed — could not find file at path: ${exp.filePath}`, err);
       res.status(500).json({ error: 'Export file not found on disk' });
       return;
     }
