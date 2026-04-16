@@ -11,7 +11,7 @@ final class YouTubeDownloadService {
     var error: String?
 
     /// Lambda API endpoint — update after first `sam deploy`
-    private static let lambdaAPIURL = "https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com"
+    private static let lambdaAPIURL = "https://yvn0vg6xmh.execute-api.us-west-2.amazonaws.com"
 
     /// Common locations where yt-dlp might be installed
     private static let commonPaths = [
