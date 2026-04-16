@@ -71,6 +71,7 @@ struct ContentView: View {
                 )
             }
         }
+        .navigationSplitViewStyle(.balanced)
         .alert("Rename Project", isPresented: $showRenameAlert) {
             TextField("Project name", text: $renameText)
             Button("Save") {
