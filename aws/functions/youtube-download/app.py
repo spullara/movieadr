@@ -48,6 +48,7 @@ def handler(event, context):
         "yt-dlp",
         "--no-playlist",
         "--no-check-certificates",
+        "--remote-components", "ejs:github",
         "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "--merge-output-format", "mp4",
         "-o", output_template,
@@ -105,7 +106,7 @@ def _get_title(url, cookie_args=None):
         cookie_args = []
     try:
         result = subprocess.run(
-            ["yt-dlp", "--no-playlist", "--no-check-certificates", *cookie_args, "--print", "title", url],
+            ["yt-dlp", "--no-playlist", "--no-check-certificates", "--remote-components", "ejs:github", *cookie_args, "--print", "title", url],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode == 0:
