@@ -1,0 +1,9 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "movieadr-youtube-download"
+resolve_s3 = true
+resolve_image_repos = true
+capabilities = "CAPABILITY_IAM"
+region = "us-west-2"
+confirm_changeset = true

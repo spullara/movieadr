@@ -2,13 +2,16 @@
 import Foundation
 import Observation
 
-/// Service for downloading YouTube videos via yt-dlp on macOS.
+/// Service for downloading YouTube videos via Lambda API with local yt-dlp fallback.
 @Observable
 final class YouTubeDownloadService {
     var isDownloading = false
     var progress: Double = 0.0
     var statusMessage = ""
     var error: String?
+
+    /// Lambda API endpoint — update after first `sam deploy`
+    private static let lambdaAPIURL = "https://YOUR-API-ID.execute-api.us-west-2.amazonaws.com"
 
     /// Common locations where yt-dlp might be installed
     private static let commonPaths = [
@@ -119,22 +122,10 @@ final class YouTubeDownloadService {
     }
 
     /// Download a YouTube video to the specified directory.
+    /// Tries the Lambda API first, falls back to local yt-dlp.
     /// Returns the URL of the downloaded file.
     @MainActor
     func download(url: String, to directory: URL) async throws -> URL {
-        // Auto-download yt-dlp if not found
-        if Self.ytDlpPath() == nil {
-            statusMessage = "Installing yt-dlp..."
-            try await Self.ensureYtDlpAvailable()
-            // Verify it was installed
-            guard Self.ytDlpPath() != nil else {
-                throw YouTubeDownloadError.downloadFailed("Auto-installed yt-dlp but binary not found at \(Self.bundledPath)")
-            }
-        }
-        guard let ytDlpPath = Self.ytDlpPath() else {
-            throw YouTubeDownloadError.ytDlpNotInstalled
-        }
-
         isDownloading = true
         progress = 0.0
         statusMessage = "Starting download..."
@@ -143,6 +134,90 @@ final class YouTubeDownloadService {
         defer { isDownloading = false }
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        // Try Lambda API first (unless placeholder URL)
+        if !Self.lambdaAPIURL.contains("YOUR-API-ID") {
+            do {
+                statusMessage = "Downloading via cloud service..."
+                let result = try await downloadViaLambda(url: url, to: directory)
+                return result
+            } catch {
+                print("[YouTubeDownloadService] Lambda API failed, falling back to local yt-dlp: \(error.localizedDescription)")
+                statusMessage = "Cloud download failed, trying local yt-dlp..."
+                progress = 0.0
+            }
+        }
+
+        // Fall back to local yt-dlp
+        return try await downloadViaLocalYtDlp(url: url, to: directory)
+    }
+
+    /// Download via the Lambda API endpoint.
+    @MainActor
+    private func downloadViaLambda(url: String, to directory: URL) async throws -> URL {
+        let apiURL = URL(string: "\(Self.lambdaAPIURL)/download")!
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 900  // Match Lambda timeout
+
+        let body = ["url": url]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        statusMessage = "Requesting download from cloud..."
+        progress = 0.1
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw YouTubeDownloadError.downloadFailed("Invalid response from Lambda API")
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let errorMsg = errorBody?["error"] as? String ?? "HTTP \(httpResponse.statusCode)"
+            throw YouTubeDownloadError.downloadFailed("Lambda API error: \(errorMsg)")
+        }
+
+        guard let result = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let downloadURLString = result["downloadUrl"] as? String,
+              let downloadURL = URL(string: downloadURLString) else {
+            throw YouTubeDownloadError.downloadFailed("Invalid response format from Lambda API")
+        }
+
+        // Download the video from the presigned S3 URL
+        statusMessage = "Downloading video from cloud..."
+        progress = 0.3
+
+        let destFile = directory.appendingPathComponent("source_video.mp4")
+
+        let (tempURL, _) = try await URLSession.shared.download(from: downloadURL)
+
+        // Move to final location
+        if FileManager.default.fileExists(atPath: destFile.path) {
+            try FileManager.default.removeItem(at: destFile)
+        }
+        try FileManager.default.moveItem(at: tempURL, to: destFile)
+
+        statusMessage = "Download complete"
+        progress = 1.0
+        return destFile
+    }
+
+    /// Download using local yt-dlp binary.
+    @MainActor
+    private func downloadViaLocalYtDlp(url: String, to directory: URL) async throws -> URL {
+        // Auto-download yt-dlp if not found
+        if Self.ytDlpPath() == nil {
+            statusMessage = "Installing yt-dlp..."
+            try await Self.ensureYtDlpAvailable()
+            guard Self.ytDlpPath() != nil else {
+                throw YouTubeDownloadError.downloadFailed("Auto-installed yt-dlp but binary not found at \(Self.bundledPath)")
+            }
+        }
+        guard let ytDlpPath = Self.ytDlpPath() else {
+            throw YouTubeDownloadError.ytDlpNotInstalled
+        }
 
         // Output template: download as source_video.%(ext)s
         let outputTemplate = directory.appendingPathComponent("source_video.%(ext)s").path
