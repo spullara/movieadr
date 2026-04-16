@@ -10,6 +10,8 @@ final class PlayerController {
     private(set) var isPlaying: Bool = false
 
     private var timeObserver: Any?
+    private var instrumentalPlayer: AVPlayer?
+    private var syncTimer: Timer?
 
     init(url: URL) {
         self.player = AVPlayer(url: url)
@@ -20,16 +22,25 @@ final class PlayerController {
         if let obs = timeObserver {
             player.removeTimeObserver(obs)
         }
+        syncTimer?.invalidate()
     }
 
     func play() {
         player.play()
         isPlaying = true
+        if let ip = instrumentalPlayer {
+            ip.seek(to: player.currentTime(), toleranceBefore: .zero, toleranceAfter: .zero)
+            ip.play()
+            startSyncTimer()
+        }
     }
 
     func pause() {
         player.pause()
         isPlaying = false
+        instrumentalPlayer?.pause()
+        syncTimer?.invalidate()
+        syncTimer = nil
     }
 
     func togglePlayPause() {
@@ -39,7 +50,28 @@ final class PlayerController {
     func seek(to time: Double) {
         let cmTime = CMTime(seconds: time, preferredTimescale: 600)
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        instrumentalPlayer?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
         currentTime = time
+    }
+
+    func loadInstrumental(url: URL) {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        player.isMuted = true
+        instrumentalPlayer = AVPlayer(url: url)
+        instrumentalPlayer?.volume = 1.0
+    }
+
+    private func startSyncTimer() {
+        syncTimer?.invalidate()
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+            guard let self, let ip = self.instrumentalPlayer else { return }
+            let videoTime = self.player.currentTime().seconds
+            let audioTime = ip.currentTime().seconds
+            if abs(videoTime - audioTime) > 0.05 {
+                ip.seek(to: CMTime(seconds: videoTime, preferredTimescale: 600),
+                        toleranceBefore: .zero, toleranceAfter: .zero)
+            }
+        }
     }
 
     private func setupObservers() {

@@ -97,6 +97,19 @@ struct PlayerContainerView: View {
         guard let videoPath = project.videoRelativePath else { return }
         let videoURL = project.directoryURL.appendingPathComponent(videoPath)
         controller = PlayerController(url: videoURL)
+
+        // Load instrumental audio (mutes video, plays instrumental instead)
+        if let instrumentalPath = project.instrumentalRelativePath {
+            let instrumentalURL = project.directoryURL.appendingPathComponent(instrumentalPath)
+            controller?.loadInstrumental(url: instrumentalURL)
+        } else {
+            // Fallback: try standard filename
+            let fallbackURL = project.directoryURL.appendingPathComponent("instrumental.wav")
+            if FileManager.default.fileExists(atPath: fallbackURL.path) {
+                controller?.loadInstrumental(url: fallbackURL)
+            }
+        }
+
         recordingVM = RecordingViewModel(project: project)
 
         // Load word timestamps
