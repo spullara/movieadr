@@ -49,7 +49,8 @@ actor TranscriptionService {
         progress(0.0)
 
         let options = DecodingOptions(
-            wordTimestamps: true
+            wordTimestamps: true,
+            chunkingStrategy: .vad
         )
 
         let results: [TranscriptionResult] = try await kit.transcribe(
