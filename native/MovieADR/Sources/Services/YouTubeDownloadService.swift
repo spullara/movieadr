@@ -11,7 +11,7 @@ final class YouTubeDownloadService {
     var error: String?
 
     /// Lambda API endpoint — update after first `sam deploy`
-    private static let lambdaAPIURL = "https://yvn0vg6xmh.execute-api.us-west-2.amazonaws.com"
+    private static let lambdaAPIURL = "https://akgvu5uhlmckptay6rvuvv6rwe0lrvff.lambda-url.us-west-2.on.aws"
 
     /// Common locations where yt-dlp might be installed
     private static let commonPaths = [
@@ -155,7 +155,7 @@ final class YouTubeDownloadService {
     /// Download via the Lambda API endpoint.
     @MainActor
     private func downloadViaLambda(url: String, to directory: URL) async throws -> URL {
-        let apiURL = URL(string: "\(Self.lambdaAPIURL)/download")!
+        let apiURL = URL(string: Self.lambdaAPIURL)!
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
