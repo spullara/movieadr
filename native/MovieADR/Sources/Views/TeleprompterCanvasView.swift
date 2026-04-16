@@ -64,7 +64,7 @@ struct TeleprompterCanvasView: View {
                 px += step
                 continue
             }
-            let barH = CGFloat(waveform.peaks[peakIdx]) * waveH
+            let barH = min(CGFloat(waveform.peaks[peakIdx]) * waveH * 10, waveH)
 
             let color: Color
             if px < nowX {
