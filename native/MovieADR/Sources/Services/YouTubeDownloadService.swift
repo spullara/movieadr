@@ -40,7 +40,7 @@ final class YouTubeDownloadService {
         }
 
         // Check bundled path in Application Support
-        if FileManager.default.isExecutableFile(atPath: bundledPath) {
+        if FileManager.default.fileExists(atPath: bundledPath) {
             return bundledPath
         }
 
