@@ -24,7 +24,9 @@ struct YouTubeAuthView: View {
                 isPresented = false
             })
         }
+        #if os(macOS)
         .frame(width: 800, height: 600)
+        #endif
     }
 
     private func extractCookies() {
@@ -55,6 +57,7 @@ struct YouTubeAuthView: View {
     }
 }
 
+#if os(macOS)
 struct YouTubeWebView: NSViewRepresentable {
     var onCookiesObtained: (String) -> Void
 
@@ -81,9 +84,7 @@ struct YouTubeWebView: NSViewRepresentable {
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            // Check if we've landed on YouTube (meaning login succeeded)
             if let url = webView.url, url.host?.contains("youtube.com") == true {
-                // Give a moment for cookies to settle
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
                         let ytCookies = cookies.filter {
@@ -99,3 +100,47 @@ struct YouTubeWebView: NSViewRepresentable {
         }
     }
 }
+#else
+struct YouTubeWebView: UIViewRepresentable {
+    var onCookiesObtained: (String) -> Void
+
+    func makeUIView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = context.coordinator
+        let url = URL(string: "https://accounts.google.com/ServiceLogin?service=youtube&continue=https://www.youtube.com/")!
+        webView.load(URLRequest(url: url))
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onCookiesObtained: onCookiesObtained)
+    }
+
+    class Coordinator: NSObject, WKNavigationDelegate {
+        var onCookiesObtained: (String) -> Void
+
+        init(onCookiesObtained: @escaping (String) -> Void) {
+            self.onCookiesObtained = onCookiesObtained
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            if let url = webView.url, url.host?.contains("youtube.com") == true {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+                        let ytCookies = cookies.filter {
+                            $0.domain.contains("youtube.com") || $0.domain.contains("google.com")
+                        }
+                        if ytCookies.contains(where: { $0.name == "SID" || $0.name == "SSID" }) {
+                            let netscape = YouTubeAuthView.toNetscapeFormat(ytCookies)
+                            self.onCookiesObtained(netscape)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
