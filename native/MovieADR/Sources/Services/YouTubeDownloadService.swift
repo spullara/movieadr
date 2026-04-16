@@ -161,7 +161,10 @@ final class YouTubeDownloadService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 900  // Match Lambda timeout
 
-        let body = ["url": url]
+        var body: [String: Any] = ["url": url]
+        if let cookies = YouTubeCookieStore.shared.loadCookies() {
+            body["cookies"] = cookies
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         statusMessage = "Requesting download from cloud..."

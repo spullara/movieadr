@@ -14,6 +14,7 @@ struct VideoImportView: View {
     #if os(macOS)
     @State private var youtubeURL = ""
     @State private var downloadService = YouTubeDownloadService()
+    @State private var showYouTubeAuth = false
     #endif
 
     var body: some View {
@@ -58,6 +59,26 @@ struct VideoImportView: View {
             }
             .frame(maxWidth: 400)
 
+            HStack {
+                if YouTubeCookieStore.shared.hasCookies {
+                    Label("YouTube signed in", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.caption)
+                    Button("Sign out") {
+                        YouTubeCookieStore.shared.clearCookies()
+                    }
+                    .font(.caption)
+                } else {
+                    Button("Sign in to YouTube") {
+                        showYouTubeAuth = true
+                    }
+                    .font(.caption)
+                    Text("Required for downloading")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if downloadService.isDownloading {
                 VStack(spacing: 4) {
                     ProgressView(value: downloadService.progress)
@@ -97,6 +118,13 @@ struct VideoImportView: View {
                 )
             }
         }
+        #if os(macOS)
+        .sheet(isPresented: $showYouTubeAuth) {
+            YouTubeAuthView(isPresented: $showYouTubeAuth) { cookies in
+                YouTubeCookieStore.shared.saveCookies(cookies)
+            }
+        }
+        #endif
 
     }
 
