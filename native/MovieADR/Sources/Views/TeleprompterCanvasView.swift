@@ -106,7 +106,6 @@ struct TeleprompterCanvasView: View {
         }
         if !currentLine.isEmpty { lines.append(currentLine) }
 
-        let lineSpacing = fontSize * 1.6
         let totalLines = min(lines.count, 3) // show up to 3 lines
 
         for (lineIdx, line) in lines.prefix(totalLines + 5).enumerated() {

@@ -1,0 +1,637 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00B0E46B9508C79CF4D3F798 /* VocalSeparationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E32103662430DCE0E067D /* VocalSeparationService.swift */; };
+		03768E35CA5D234F884F3ABF /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292515698C5F5CB0D3DE4EC7 /* AudioRecordingService.swift */; };
+		07C33875EC69BAE82F8FD21D /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0FCDF580D79E960E905007 /* VideoPlayerView.swift */; };
+		0AE7286B93ACE7C40D0E348F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B728B240C9600B4AA8476B0 /* ContentView.swift */; };
+		0DF8E7B0CE10DD532E62DAAA /* VideoImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B0167B6FE98610A9B2345E /* VideoImportView.swift */; };
+		1043609F2B9DABE20D1F9C78 /* TransportControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C48A8546D5244060E97C67 /* TransportControlsView.swift */; };
+		109FB3D0AC2D15CA6975D4AA /* VideoTrimView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB616FA6429335B75F6F303 /* VideoTrimView.swift */; };
+		125538A3797390E5B329A1D2 /* TeleprompterCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1127863CA054A8255ABE87B3 /* TeleprompterCanvasView.swift */; };
+		163AB95D50446E7A0B1958D6 /* YouTubeDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB07C425F4597B80530E7612 /* YouTubeDownloadService.swift */; };
+		1A9B80C25BD1EDB55B261ED3 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B46B94E9F8801B669E505CB3 /* WhisperKit */; };
+		1C13AF20C9CABCCBD665D6B5 /* TimedWord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96E1B6605208C2D1E34034E /* TimedWord.swift */; };
+		1E4D27FE84AFEF855D27A443 /* PreparationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81FFF80F9D77C942E6B108BE /* PreparationPipeline.swift */; };
+		28CE6619C1CB88780EA82C0C /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3571B33AA991F34F777EEA87 /* ExportService.swift */; };
+		2EB7473BF9E75426C6E705AD /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529377F0FA31B0DA093AFA0A /* Project.swift */; };
+		330B3322A6CA31C93915BE35 /* ExportJob.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2655CD5790857E98CE2C85A /* ExportJob.swift */; };
+		35E7E87985889B9AD2350945 /* MLServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507B15D063E8E7D5BBB6BBC4 /* MLServices.swift */; };
+		3A4ACF23E4B5DC1D3C9184D6 /* TakeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281E309269193004F293B43E /* TakeListView.swift */; };
+		42B27DC699085228E76794FF /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3571B33AA991F34F777EEA87 /* ExportService.swift */; };
+		45C2FA23CB3C7BB5130CA8C8 /* RecordingLevelMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB9B79C2CCFA6803B86AFB0 /* RecordingLevelMeterView.swift */; };
+		462B4306F781CB54F797A2BD /* PlayerContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EBDAFC25185B437FD1869F /* PlayerContainerView.swift */; };
+		465394287BCC5C82C66D4053 /* DemucsMLX in Frameworks */ = {isa = PBXBuildFile; productRef = D5B4411932CA37F466236AE4 /* DemucsMLX */; };
+		4DCCD12813AA047C6B64DA01 /* RecordingLevelMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB9B79C2CCFA6803B86AFB0 /* RecordingLevelMeterView.swift */; };
+		50735F44F61BC0C30BFE75C1 /* VideoTrimView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB616FA6429335B75F6F303 /* VideoTrimView.swift */; };
+		5BE37921AF8BBF92C015BC3A /* RecordingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AE9825C60F290B7307838F /* RecordingViewModel.swift */; };
+		5EC5111D231521F983945E09 /* TimedWord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96E1B6605208C2D1E34034E /* TimedWord.swift */; };
+		61D07DC6D58CACF307BC3C31 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529377F0FA31B0DA093AFA0A /* Project.swift */; };
+		6A9B0335B573802B6B7CBAA8 /* VocalSeparationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 405E32103662430DCE0E067D /* VocalSeparationService.swift */; };
+		6D3C86E027DAB6E2A7B9ADEF /* PlayerContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EBDAFC25185B437FD1869F /* PlayerContainerView.swift */; };
+		7098F23A8C9A5E3BA76E6D75 /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B21212838B0EEA93AA22F0 /* TranscriptionService.swift */; };
+		7FECD9BE9659C43C3D58705F /* TranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40B21212838B0EEA93AA22F0 /* TranscriptionService.swift */; };
+		83ECAD215BC77066FBD2C20F /* MLServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 507B15D063E8E7D5BBB6BBC4 /* MLServices.swift */; };
+		864481E2946ABBF146CC95CA /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF32AA4BD00EE6284AB703E /* ExportView.swift */; };
+		88FC7574A00E6546AAB646FD /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BA58CF2FF0B27D9B6A68F1 /* WaveformGenerator.swift */; };
+		8B204C497E4C40ADE34325BC /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 082354F0784849EC8F10EDBE /* ProjectDetailView.swift */; };
+		8B7A1A95721458121C37D7EC /* Take.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A6C5899E2B0F508321E08 /* Take.swift */; };
+		8DF4F9D4F78A6F7B699E6C39 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 166BD1C057CAFF26F1DB5555 /* WhisperKit */; };
+		944DF103E27F122E362DC0FB /* Take.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36A6C5899E2B0F508321E08 /* Take.swift */; };
+		98F835CEEE5141FED7DE2ACC /* TeleprompterCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1127863CA054A8255ABE87B3 /* TeleprompterCanvasView.swift */; };
+		A605B1B60233052C22089FDF /* YouTubeDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB07C425F4597B80530E7612 /* YouTubeDownloadService.swift */; };
+		B1D7629447D1ED82DD412B8B /* AudioExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B853AEF2A769D38E89D533A5 /* AudioExtractor.swift */; };
+		B62AB63C4C189D118FAA898B /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BA58CF2FF0B27D9B6A68F1 /* WaveformGenerator.swift */; };
+		B9FB81EAD00B17600176305A /* ProjectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 082354F0784849EC8F10EDBE /* ProjectDetailView.swift */; };
+		BFFF7E91D17D4EE9A187BB28 /* ExportJob.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2655CD5790857E98CE2C85A /* ExportJob.swift */; };
+		C36ECF59B755018A7512B828 /* TransportControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C48A8546D5244060E97C67 /* TransportControlsView.swift */; };
+		C4E9F7A34B5ED7C9D108AB65 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 292515698C5F5CB0D3DE4EC7 /* AudioRecordingService.swift */; };
+		CD41E6E333986FE3CF653E87 /* AudioExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B853AEF2A769D38E89D533A5 /* AudioExtractor.swift */; };
+		CE36B81DE5727DACE8D6A4CB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B728B240C9600B4AA8476B0 /* ContentView.swift */; };
+		D0F371725263DF537791495F /* TakeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281E309269193004F293B43E /* TakeListView.swift */; };
+		D4C7FEFE285F1695F42A9BC8 /* RecordingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95AE9825C60F290B7307838F /* RecordingViewModel.swift */; };
+		D909CD27482A7511B4A11505 /* DemucsMLX in Frameworks */ = {isa = PBXBuildFile; productRef = 10558FEC2872B783F9A6AFD2 /* DemucsMLX */; };
+		DC10B20C6A16BDB43F7FEBA0 /* VideoImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B0167B6FE98610A9B2345E /* VideoImportView.swift */; };
+		DCF0D2A369C399D5EDF0E6BD /* PreparationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81FFF80F9D77C942E6B108BE /* PreparationPipeline.swift */; };
+		E8ACD3C6997D8A1EE4BF8FA6 /* MovieADRApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2EA60B1C3F82463D43485F /* MovieADRApp.swift */; };
+		EE560E77D38E1353586E3E34 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F0FCDF580D79E960E905007 /* VideoPlayerView.swift */; };
+		F73B95B5FAB104BE602E189E /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF32AA4BD00EE6284AB703E /* ExportView.swift */; };
+		FFDC363D507FD75D10279204 /* MovieADRApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2EA60B1C3F82463D43485F /* MovieADRApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		082354F0784849EC8F10EDBE /* ProjectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDetailView.swift; sourceTree = "<group>"; };
+		09EBDAFC25185B437FD1869F /* PlayerContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerContainerView.swift; sourceTree = "<group>"; };
+		0B728B240C9600B4AA8476B0 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1127863CA054A8255ABE87B3 /* TeleprompterCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleprompterCanvasView.swift; sourceTree = "<group>"; };
+		281E309269193004F293B43E /* TakeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TakeListView.swift; sourceTree = "<group>"; };
+		292515698C5F5CB0D3DE4EC7 /* AudioRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecordingService.swift; sourceTree = "<group>"; };
+		2E2EA60B1C3F82463D43485F /* MovieADRApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieADRApp.swift; sourceTree = "<group>"; };
+		3571B33AA991F34F777EEA87 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
+		3CB616FA6429335B75F6F303 /* VideoTrimView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoTrimView.swift; sourceTree = "<group>"; };
+		405E32103662430DCE0E067D /* VocalSeparationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocalSeparationService.swift; sourceTree = "<group>"; };
+		40B21212838B0EEA93AA22F0 /* TranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionService.swift; sourceTree = "<group>"; };
+		4AA4846CBAF1FD0732E2955F /* MovieADR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MovieADR.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FB9B79C2CCFA6803B86AFB0 /* RecordingLevelMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingLevelMeterView.swift; sourceTree = "<group>"; };
+		507B15D063E8E7D5BBB6BBC4 /* MLServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLServices.swift; sourceTree = "<group>"; };
+		529377F0FA31B0DA093AFA0A /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		6562C8333D864C66341ED3F6 /* MovieADR.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MovieADR.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F0FCDF580D79E960E905007 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
+		81FFF80F9D77C942E6B108BE /* PreparationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreparationPipeline.swift; sourceTree = "<group>"; };
+		8EF32AA4BD00EE6284AB703E /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		95AE9825C60F290B7307838F /* RecordingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingViewModel.swift; sourceTree = "<group>"; };
+		A2655CD5790857E98CE2C85A /* ExportJob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportJob.swift; sourceTree = "<group>"; };
+		B1BA58CF2FF0B27D9B6A68F1 /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
+		B36A6C5899E2B0F508321E08 /* Take.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Take.swift; sourceTree = "<group>"; };
+		B853AEF2A769D38E89D533A5 /* AudioExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioExtractor.swift; sourceTree = "<group>"; };
+		B8C48A8546D5244060E97C67 /* TransportControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportControlsView.swift; sourceTree = "<group>"; };
+		C96E1B6605208C2D1E34034E /* TimedWord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedWord.swift; sourceTree = "<group>"; };
+		CB07C425F4597B80530E7612 /* YouTubeDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeDownloadService.swift; sourceTree = "<group>"; };
+		D9B0167B6FE98610A9B2345E /* VideoImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2252C529DE37F1AD94224AB5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8DF4F9D4F78A6F7B699E6C39 /* WhisperKit in Frameworks */,
+				D909CD27482A7511B4A11505 /* DemucsMLX in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32488D162F4CB1B77656BA91 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1A9B80C25BD1EDB55B261ED3 /* WhisperKit in Frameworks */,
+				465394287BCC5C82C66D4053 /* DemucsMLX in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		11AB40AABAC7370206352F9C /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B853AEF2A769D38E89D533A5 /* AudioExtractor.swift */,
+				292515698C5F5CB0D3DE4EC7 /* AudioRecordingService.swift */,
+				3571B33AA991F34F777EEA87 /* ExportService.swift */,
+				507B15D063E8E7D5BBB6BBC4 /* MLServices.swift */,
+				81FFF80F9D77C942E6B108BE /* PreparationPipeline.swift */,
+				95AE9825C60F290B7307838F /* RecordingViewModel.swift */,
+				40B21212838B0EEA93AA22F0 /* TranscriptionService.swift */,
+				405E32103662430DCE0E067D /* VocalSeparationService.swift */,
+				B1BA58CF2FF0B27D9B6A68F1 /* WaveformGenerator.swift */,
+				CB07C425F4597B80530E7612 /* YouTubeDownloadService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		180C481FD322C0F4EEB48EB2 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				2E2EA60B1C3F82463D43485F /* MovieADRApp.swift */,
+				EB98848C1C32DE49317FA66D /* Models */,
+				11AB40AABAC7370206352F9C /* Services */,
+				CB5D2F39F248D2C59122EACE /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		9855D07B455B2C5AB2C068AC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6562C8333D864C66341ED3F6 /* MovieADR.app */,
+				4AA4846CBAF1FD0732E2955F /* MovieADR.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A6357FB1D1BA5BAC50717527 = {
+			isa = PBXGroup;
+			children = (
+				180C481FD322C0F4EEB48EB2 /* Sources */,
+				9855D07B455B2C5AB2C068AC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CB5D2F39F248D2C59122EACE /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				0B728B240C9600B4AA8476B0 /* ContentView.swift */,
+				8EF32AA4BD00EE6284AB703E /* ExportView.swift */,
+				09EBDAFC25185B437FD1869F /* PlayerContainerView.swift */,
+				082354F0784849EC8F10EDBE /* ProjectDetailView.swift */,
+				4FB9B79C2CCFA6803B86AFB0 /* RecordingLevelMeterView.swift */,
+				281E309269193004F293B43E /* TakeListView.swift */,
+				1127863CA054A8255ABE87B3 /* TeleprompterCanvasView.swift */,
+				B8C48A8546D5244060E97C67 /* TransportControlsView.swift */,
+				D9B0167B6FE98610A9B2345E /* VideoImportView.swift */,
+				6F0FCDF580D79E960E905007 /* VideoPlayerView.swift */,
+				3CB616FA6429335B75F6F303 /* VideoTrimView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		EB98848C1C32DE49317FA66D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A2655CD5790857E98CE2C85A /* ExportJob.swift */,
+				529377F0FA31B0DA093AFA0A /* Project.swift */,
+				B36A6C5899E2B0F508321E08 /* Take.swift */,
+				C96E1B6605208C2D1E34034E /* TimedWord.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8E91AADC9E998FE32B80E3E8 /* MovieADR_macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B96E602760BA230556171AC9 /* Build configuration list for PBXNativeTarget "MovieADR_macOS" */;
+			buildPhases = (
+				4C2F139A4DF4DB2905AA6846 /* Sources */,
+				2252C529DE37F1AD94224AB5 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MovieADR_macOS;
+			packageProductDependencies = (
+				166BD1C057CAFF26F1DB5555 /* WhisperKit */,
+				10558FEC2872B783F9A6AFD2 /* DemucsMLX */,
+			);
+			productName = MovieADR_macOS;
+			productReference = 4AA4846CBAF1FD0732E2955F /* MovieADR.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D7A5809D0684BD0259C49AEF /* MovieADR_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 98B04FDD6DEBD32A13A496DC /* Build configuration list for PBXNativeTarget "MovieADR_iOS" */;
+			buildPhases = (
+				F74F9C1B5503ED75DED9C9D9 /* Sources */,
+				32488D162F4CB1B77656BA91 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MovieADR_iOS;
+			packageProductDependencies = (
+				B46B94E9F8801B669E505CB3 /* WhisperKit */,
+				D5B4411932CA37F466236AE4 /* DemucsMLX */,
+			);
+			productName = MovieADR_iOS;
+			productReference = 6562C8333D864C66341ED3F6 /* MovieADR.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DA810BDAEEB7353BA2FE6CB7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 5229240D2BF351B65A5354BF /* Build configuration list for PBXProject "MovieADR" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A6357FB1D1BA5BAC50717527;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				736E3EFE6BC9BEC3C736F72D /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				F36C9C440048FBE1A2546BB8 /* XCRemoteSwiftPackageReference "demucs-mlx-swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9855D07B455B2C5AB2C068AC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D7A5809D0684BD0259C49AEF /* MovieADR_iOS */,
+				8E91AADC9E998FE32B80E3E8 /* MovieADR_macOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4C2F139A4DF4DB2905AA6846 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1D7629447D1ED82DD412B8B /* AudioExtractor.swift in Sources */,
+				C4E9F7A34B5ED7C9D108AB65 /* AudioRecordingService.swift in Sources */,
+				0AE7286B93ACE7C40D0E348F /* ContentView.swift in Sources */,
+				330B3322A6CA31C93915BE35 /* ExportJob.swift in Sources */,
+				42B27DC699085228E76794FF /* ExportService.swift in Sources */,
+				864481E2946ABBF146CC95CA /* ExportView.swift in Sources */,
+				83ECAD215BC77066FBD2C20F /* MLServices.swift in Sources */,
+				E8ACD3C6997D8A1EE4BF8FA6 /* MovieADRApp.swift in Sources */,
+				462B4306F781CB54F797A2BD /* PlayerContainerView.swift in Sources */,
+				DCF0D2A369C399D5EDF0E6BD /* PreparationPipeline.swift in Sources */,
+				2EB7473BF9E75426C6E705AD /* Project.swift in Sources */,
+				B9FB81EAD00B17600176305A /* ProjectDetailView.swift in Sources */,
+				4DCCD12813AA047C6B64DA01 /* RecordingLevelMeterView.swift in Sources */,
+				D4C7FEFE285F1695F42A9BC8 /* RecordingViewModel.swift in Sources */,
+				944DF103E27F122E362DC0FB /* Take.swift in Sources */,
+				D0F371725263DF537791495F /* TakeListView.swift in Sources */,
+				125538A3797390E5B329A1D2 /* TeleprompterCanvasView.swift in Sources */,
+				5EC5111D231521F983945E09 /* TimedWord.swift in Sources */,
+				7FECD9BE9659C43C3D58705F /* TranscriptionService.swift in Sources */,
+				C36ECF59B755018A7512B828 /* TransportControlsView.swift in Sources */,
+				0DF8E7B0CE10DD532E62DAAA /* VideoImportView.swift in Sources */,
+				07C33875EC69BAE82F8FD21D /* VideoPlayerView.swift in Sources */,
+				50735F44F61BC0C30BFE75C1 /* VideoTrimView.swift in Sources */,
+				6A9B0335B573802B6B7CBAA8 /* VocalSeparationService.swift in Sources */,
+				B62AB63C4C189D118FAA898B /* WaveformGenerator.swift in Sources */,
+				163AB95D50446E7A0B1958D6 /* YouTubeDownloadService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F74F9C1B5503ED75DED9C9D9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD41E6E333986FE3CF653E87 /* AudioExtractor.swift in Sources */,
+				03768E35CA5D234F884F3ABF /* AudioRecordingService.swift in Sources */,
+				CE36B81DE5727DACE8D6A4CB /* ContentView.swift in Sources */,
+				BFFF7E91D17D4EE9A187BB28 /* ExportJob.swift in Sources */,
+				28CE6619C1CB88780EA82C0C /* ExportService.swift in Sources */,
+				F73B95B5FAB104BE602E189E /* ExportView.swift in Sources */,
+				35E7E87985889B9AD2350945 /* MLServices.swift in Sources */,
+				FFDC363D507FD75D10279204 /* MovieADRApp.swift in Sources */,
+				6D3C86E027DAB6E2A7B9ADEF /* PlayerContainerView.swift in Sources */,
+				1E4D27FE84AFEF855D27A443 /* PreparationPipeline.swift in Sources */,
+				61D07DC6D58CACF307BC3C31 /* Project.swift in Sources */,
+				8B204C497E4C40ADE34325BC /* ProjectDetailView.swift in Sources */,
+				45C2FA23CB3C7BB5130CA8C8 /* RecordingLevelMeterView.swift in Sources */,
+				5BE37921AF8BBF92C015BC3A /* RecordingViewModel.swift in Sources */,
+				8B7A1A95721458121C37D7EC /* Take.swift in Sources */,
+				3A4ACF23E4B5DC1D3C9184D6 /* TakeListView.swift in Sources */,
+				98F835CEEE5141FED7DE2ACC /* TeleprompterCanvasView.swift in Sources */,
+				1C13AF20C9CABCCBD665D6B5 /* TimedWord.swift in Sources */,
+				7098F23A8C9A5E3BA76E6D75 /* TranscriptionService.swift in Sources */,
+				1043609F2B9DABE20D1F9C78 /* TransportControlsView.swift in Sources */,
+				DC10B20C6A16BDB43F7FEBA0 /* VideoImportView.swift in Sources */,
+				EE560E77D38E1353586E3E34 /* VideoPlayerView.swift in Sources */,
+				109FB3D0AC2D15CA6975D4AA /* VideoTrimView.swift in Sources */,
+				00B0E46B9508C79CF4D3F798 /* VocalSeparationService.swift in Sources */,
+				88FC7574A00E6546AAB646FD /* WaveformGenerator.swift in Sources */,
+				A605B1B60233052C22089FDF /* YouTubeDownloadService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0944AC9841565DBB9975E5A6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_ENTITLEMENTS = MovieADR.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "MovieADR needs access to your documents to import and export videos";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MovieADR needs microphone access to record your dialogue";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.movieadr.app;
+				PRODUCT_NAME = MovieADR;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		1C5CE358279EB28D07A024FF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		430A964BDF149DD2811E24C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		4C3353730150A6C0A6BDFB1B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_ENTITLEMENTS = MovieADR.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "MovieADR needs access to your documents to import and export videos";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MovieADR needs microphone access to record your dialogue";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.movieadr.app;
+				PRODUCT_NAME = MovieADR;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BEC860B72D11F9E7C99F23E8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_ENTITLEMENTS = MovieADR.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "MovieADR needs access to your documents to import and export videos";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MovieADR needs microphone access to record your dialogue";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.movieadr.app;
+				PRODUCT_NAME = MovieADR;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		EFD5A768F8447417D96F070D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_ENTITLEMENTS = MovieADR.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "MovieADR needs access to your documents to import and export videos";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MovieADR needs microphone access to record your dialogue";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.movieadr.app;
+				PRODUCT_NAME = MovieADR;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5229240D2BF351B65A5354BF /* Build configuration list for PBXProject "MovieADR" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				430A964BDF149DD2811E24C3 /* Debug */,
+				1C5CE358279EB28D07A024FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		98B04FDD6DEBD32A13A496DC /* Build configuration list for PBXNativeTarget "MovieADR_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C3353730150A6C0A6BDFB1B /* Debug */,
+				EFD5A768F8447417D96F070D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B96E602760BA230556171AC9 /* Build configuration list for PBXNativeTarget "MovieADR_macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BEC860B72D11F9E7C99F23E8 /* Debug */,
+				0944AC9841565DBB9975E5A6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		736E3EFE6BC9BEC3C736F72D /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+		F36C9C440048FBE1A2546BB8 /* XCRemoteSwiftPackageReference "demucs-mlx-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kylehowells/demucs-mlx-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		10558FEC2872B783F9A6AFD2 /* DemucsMLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F36C9C440048FBE1A2546BB8 /* XCRemoteSwiftPackageReference "demucs-mlx-swift" */;
+			productName = DemucsMLX;
+		};
+		166BD1C057CAFF26F1DB5555 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 736E3EFE6BC9BEC3C736F72D /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+		B46B94E9F8801B669E505CB3 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 736E3EFE6BC9BEC3C736F72D /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+		D5B4411932CA37F466236AE4 /* DemucsMLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F36C9C440048FBE1A2546BB8 /* XCRemoteSwiftPackageReference "demucs-mlx-swift" */;
+			productName = DemucsMLX;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DA810BDAEEB7353BA2FE6CB7 /* Project object */;
+}
