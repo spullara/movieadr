@@ -39,6 +39,7 @@ struct TakeListView: View {
             }
         }
         .padding(12)
+        .colorScheme(.dark)
         .sheet(isPresented: $showExportSheet) {
             ExportView(project: project)
         }
