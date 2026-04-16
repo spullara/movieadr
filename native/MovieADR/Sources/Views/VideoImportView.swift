@@ -14,7 +14,6 @@ struct VideoImportView: View {
     #if os(macOS)
     @State private var youtubeURL = ""
     @State private var downloadService = YouTubeDownloadService()
-    @State private var showYtDlpMissing = false
     #endif
 
     var body: some View {
@@ -98,13 +97,7 @@ struct VideoImportView: View {
                 )
             }
         }
-        #if os(macOS)
-        .alert("yt-dlp Not Installed", isPresented: $showYtDlpMissing) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Install yt-dlp via Homebrew:\nbrew install yt-dlp")
-        }
-        #endif
+
     }
 
     private func handleImport(_ result: Result<[URL], Error>) {
@@ -152,11 +145,6 @@ struct VideoImportView: View {
     private func startYouTubeDownload() async {
         let urlString = youtubeURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !urlString.isEmpty else { return }
-
-        guard YouTubeDownloadService.isYtDlpInstalled() else {
-            showYtDlpMissing = true
-            return
-        }
 
         do {
             let projectDir = project.directoryURL

@@ -17,6 +17,13 @@ final class YouTubeDownloadService {
         "/usr/bin/yt-dlp",              // System
     ]
 
+    /// Path to bundled yt-dlp in Application Support
+    private static var bundledPath: String {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("MovieADR")
+        return dir.appendingPathComponent("yt-dlp").path
+    }
+
     /// Check whether yt-dlp is installed on the system.
     static func isYtDlpInstalled() -> Bool {
         return ytDlpPath() != nil
@@ -30,6 +37,11 @@ final class YouTubeDownloadService {
             if FileManager.default.isExecutableFile(atPath: path) {
                 return path
             }
+        }
+
+        // Check bundled path in Application Support
+        if FileManager.default.isExecutableFile(atPath: bundledPath) {
+            return bundledPath
         }
 
         // Fallback to which (may not work in sandbox)
@@ -59,11 +71,45 @@ final class YouTubeDownloadService {
         }
     }
 
+    /// Download the official yt-dlp macOS binary to Application Support.
+    @MainActor
+    static func ensureYtDlpAvailable() async throws {
+        // Already available?
+        if ytDlpPath() != nil { return }
+
+        // Download official standalone binary
+        let downloadURL = URL(string: "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos")!
+
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("MovieADR")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let destURL = URL(fileURLWithPath: bundledPath)
+
+        let (tempURL, response) = try await URLSession.shared.download(from: downloadURL)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw YouTubeDownloadError.downloadFailed("Failed to download yt-dlp binary")
+        }
+
+        // Move to final location (overwrite if exists)
+        if FileManager.default.fileExists(atPath: destURL.path) {
+            try FileManager.default.removeItem(at: destURL)
+        }
+        try FileManager.default.moveItem(at: tempURL, to: destURL)
+
+        // Make executable
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destURL.path)
+    }
+
     /// Download a YouTube video to the specified directory.
     /// Returns the URL of the downloaded file.
     @MainActor
     func download(url: String, to directory: URL) async throws -> URL {
-        guard Self.isYtDlpInstalled(), let ytDlpPath = Self.ytDlpPath() else {
+        // Auto-download yt-dlp if not found
+        if Self.ytDlpPath() == nil {
+            statusMessage = "Installing yt-dlp..."
+            try await Self.ensureYtDlpAvailable()
+        }
+        guard let ytDlpPath = Self.ytDlpPath() else {
             throw YouTubeDownloadError.ytDlpNotInstalled
         }
 
