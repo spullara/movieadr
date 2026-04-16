@@ -36,21 +36,24 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref DownloadBucket
-      Events:
-        Download:
-          Type: HttpApi
-          Properties:
-            Path: /download
-            Method: POST
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
     Metadata:
       DockerTag: latest
       DockerContext: ./functions/youtube-download
       Dockerfile: Dockerfile
 
 Outputs:
-  ApiUrl:
-    Description: API Gateway endpoint URL
-    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  YouTubeDownloadFunctionUrl:
+    Description: "Lambda Function URL for YouTube downloads"
+    Value: !GetAtt YouTubeDownloadFunctionUrl.FunctionUrl
   DownloadBucketName:
     Description: S3 bucket for temporary downloads
     Value: !Ref DownloadBucket
