@@ -2,7 +2,7 @@ FROM public.ecr.aws/lambda/python:3.12
 
 # Install ffmpeg
 RUN dnf install -y tar xz && \
-    curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg.tar.xz && \
+    curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz -o /tmp/ffmpeg.tar.xz && \
     tar xf /tmp/ffmpeg.tar.xz -C /tmp && \
     cp /tmp/ffmpeg-*/ffmpeg /usr/local/bin/ffmpeg && \
     cp /tmp/ffmpeg-*/ffprobe /usr/local/bin/ffprobe && \
