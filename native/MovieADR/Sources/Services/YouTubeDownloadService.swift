@@ -10,28 +10,41 @@ final class YouTubeDownloadService {
     var statusMessage = ""
     var error: String?
 
+    /// Common locations where yt-dlp might be installed
+    private static let commonPaths = [
+        "/opt/homebrew/bin/yt-dlp",     // Apple Silicon Homebrew
+        "/usr/local/bin/yt-dlp",        // Intel Homebrew
+        "/usr/bin/yt-dlp",              // System
+    ]
+
     /// Check whether yt-dlp is installed on the system.
     static func isYtDlpInstalled() -> Bool {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-        process.arguments = ["yt-dlp"]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
-            return false
-        }
+        return ytDlpPath() != nil
     }
 
-    /// Find the path to yt-dlp.
+    /// Find the path to yt-dlp by checking common install locations,
+    /// then falling back to `which`.
     private static func ytDlpPath() -> String? {
+        // Check common paths first (works inside sandbox)
+        for path in commonPaths {
+            if FileManager.default.isExecutableFile(atPath: path) {
+                return path
+            }
+        }
+
+        // Fallback to which (may not work in sandbox)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
         process.arguments = ["yt-dlp"]
+        // Add common paths to the process environment
+        var env = ProcessInfo.processInfo.environment
+        let extraPaths = "/opt/homebrew/bin:/usr/local/bin"
+        if let existingPath = env["PATH"] {
+            env["PATH"] = "\(extraPaths):\(existingPath)"
+        } else {
+            env["PATH"] = extraPaths
+        }
+        process.environment = env
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = Pipe()
@@ -121,6 +134,16 @@ final class YouTubeDownloadService {
                     }
                 }
             }
+
+            // Ensure Homebrew paths are in PATH for any subprocesses
+            var env = ProcessInfo.processInfo.environment
+            let extraPaths = "/opt/homebrew/bin:/usr/local/bin"
+            if let existingPath = env["PATH"] {
+                env["PATH"] = "\(extraPaths):\(existingPath)"
+            } else {
+                env["PATH"] = extraPaths
+            }
+            process.environment = env
 
             do {
                 try process.run()
