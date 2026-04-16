@@ -109,9 +109,7 @@ struct TeleprompterCanvasView: View {
         }
         if !currentLine.isEmpty { lines.append(currentLine) }
 
-        let totalLines = min(lines.count, 3) // show up to 3 lines
-
-        for (lineIdx, line) in lines.prefix(totalLines + 5).enumerated() {
+        for (lineIdx, line) in lines.enumerated() {
             // Only draw lines that are near the visible time range
             guard let firstWord = line.first, let lastWord = line.last else { continue }
             if lastWord.end < visibleLeft || firstWord.start > visibleRight { continue }
