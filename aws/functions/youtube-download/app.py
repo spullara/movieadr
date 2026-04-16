@@ -28,8 +28,17 @@ def handler(event, context):
     if "youtube.com" not in url and "youtu.be" not in url:
         return _error(400, "URL must be a YouTube link")
 
+    # Write cookies file if provided (Netscape cookie jar format)
+    cookies = body.get("cookies", "")
+    cookie_args = []
+    if cookies:
+        cookie_path = "/tmp/cookies.txt"
+        with open(cookie_path, "w") as f:
+            f.write(cookies)
+        cookie_args = ["--cookies", cookie_path]
+
     # Get video title first
-    title = _get_title(url)
+    title = _get_title(url, cookie_args)
 
     # Download video to /tmp
     work_dir = tempfile.mkdtemp(dir="/tmp")
@@ -42,6 +51,7 @@ def handler(event, context):
         "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "--merge-output-format", "mp4",
         "-o", output_template,
+        *cookie_args,
         url,
     ]
 
@@ -89,11 +99,13 @@ def handler(event, context):
     }
 
 
-def _get_title(url):
+def _get_title(url, cookie_args=None):
     """Extract video title using yt-dlp --print title."""
+    if cookie_args is None:
+        cookie_args = []
     try:
         result = subprocess.run(
-            ["yt-dlp", "--no-playlist", "--no-check-certificates", "--print", "title", url],
+            ["yt-dlp", "--no-playlist", "--no-check-certificates", *cookie_args, "--print", "title", url],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode == 0:
