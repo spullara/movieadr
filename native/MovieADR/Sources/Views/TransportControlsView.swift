@@ -36,6 +36,7 @@ struct TransportControlsView: View {
                     Image(systemName: "gobackward.5")
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(.white)
                 .disabled(recordingVM?.isRecording ?? false)
 
                 // Skip forward 5s (disabled during recording)
@@ -43,6 +44,7 @@ struct TransportControlsView: View {
                     Image(systemName: "goforward.5")
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(.white)
                 .disabled(recordingVM?.isRecording ?? false)
 
                 // Record button
@@ -53,7 +55,7 @@ struct TransportControlsView: View {
                             systemImage: vm.isRecording ? "stop.fill" : "record.circle"
                         )
                         .font(.body)
-                        .foregroundStyle(vm.isRecording ? .red : .primary)
+                        .foregroundStyle(vm.isRecording ? .red : .white)
                     }
                     .buttonStyle(.bordered)
                     .tint(vm.isRecording ? .red : .red.opacity(0.7))
@@ -82,6 +84,8 @@ struct TransportControlsView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .background(.black.opacity(0.6))
+        .colorScheme(.dark)
     }
 
     private func toggleRecording(vm: RecordingViewModel) {
