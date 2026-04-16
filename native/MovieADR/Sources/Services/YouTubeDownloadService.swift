@@ -85,9 +85,25 @@ final class YouTubeDownloadService {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let destURL = URL(fileURLWithPath: bundledPath)
 
-        let (tempURL, response) = try await URLSession.shared.download(from: downloadURL)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw YouTubeDownloadError.downloadFailed("Failed to download yt-dlp binary")
+        // Configure session to follow redirects
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 60
+        config.timeoutIntervalForResource = 300
+        let session = URLSession(configuration: config)
+
+        let (tempURL, response) = try await session.download(from: downloadURL)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw YouTubeDownloadError.downloadFailed("Invalid response downloading yt-dlp")
+        }
+        guard httpResponse.statusCode == 200 else {
+            throw YouTubeDownloadError.downloadFailed("Failed to download yt-dlp: HTTP \(httpResponse.statusCode)")
+        }
+
+        // Verify we got a reasonable file (should be > 1MB)
+        let attrs = try FileManager.default.attributesOfItem(atPath: tempURL.path)
+        let fileSize = attrs[.size] as? Int ?? 0
+        guard fileSize > 1_000_000 else {
+            throw YouTubeDownloadError.downloadFailed("Downloaded yt-dlp is too small (\(fileSize) bytes), likely not the real binary")
         }
 
         // Move to final location (overwrite if exists)
@@ -98,6 +114,8 @@ final class YouTubeDownloadService {
 
         // Make executable
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destURL.path)
+
+        print("[YouTubeDownloadService] yt-dlp installed at \(destURL.path)")
     }
 
     /// Download a YouTube video to the specified directory.
@@ -108,6 +126,10 @@ final class YouTubeDownloadService {
         if Self.ytDlpPath() == nil {
             statusMessage = "Installing yt-dlp..."
             try await Self.ensureYtDlpAvailable()
+            // Verify it was installed
+            guard Self.ytDlpPath() != nil else {
+                throw YouTubeDownloadError.downloadFailed("Auto-installed yt-dlp but binary not found at \(Self.bundledPath)")
+            }
         }
         guard let ytDlpPath = Self.ytDlpPath() else {
             throw YouTubeDownloadError.ytDlpNotInstalled
@@ -130,6 +152,7 @@ final class YouTubeDownloadService {
             process.executableURL = URL(fileURLWithPath: ytDlpPath)
             process.arguments = [
                 "--no-playlist",
+                "--no-check-certificates",
                 "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
                 "--merge-output-format", "mp4",
                 "-o", outputTemplate,
@@ -191,6 +214,13 @@ final class YouTubeDownloadService {
             }
             process.environment = env
 
+            // Help yt-dlp find ffmpeg
+            let ffmpegPaths = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
+            if let ffmpegPath = ffmpegPaths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
+                let ffmpegDir = URL(fileURLWithPath: ffmpegPath).deletingLastPathComponent().path
+                process.arguments?.insert(contentsOf: ["--ffmpeg-location", ffmpegDir], at: 1)
+            }
+
             do {
                 try process.run()
             } catch {
@@ -228,7 +258,7 @@ enum YouTubeDownloadError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .ytDlpNotInstalled:
-            return "yt-dlp is not installed. Install it via Homebrew: brew install yt-dlp"
+            return "yt-dlp could not be installed automatically. Check your internet connection and try again."
         case .downloadFailed(let msg):
             return "Download failed: \(msg)"
         }
