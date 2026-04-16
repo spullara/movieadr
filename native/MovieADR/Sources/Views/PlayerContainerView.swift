@@ -23,7 +23,9 @@ struct PlayerContainerView: View {
                         words: words,
                         waveform: waveform,
                         currentTime: controller.currentTime,
-                        duration: controller.duration
+                        duration: controller.duration,
+                        trimStart: controller.trimStart,
+                        trimDuration: (controller.trimEnd ?? controller.duration) - controller.trimStart
                     )
                 }
                 .aspectRatio(16.0 / 9.0, contentMode: .fit)
@@ -124,7 +126,14 @@ struct PlayerContainerView: View {
         // Load word timestamps
         if let data = project.timestampsJSON {
             do {
-                words = try JSONDecoder().decode([TimedWord].self, from: data)
+                let rawWords = try JSONDecoder().decode([TimedWord].self, from: data)
+                // Offset timestamps by trimStart since whisper ran on trimmed audio
+                let offset = project.trimStart ?? 0
+                if offset > 0 {
+                    words = rawWords.map { TimedWord(word: $0.word, start: $0.start + offset, end: $0.end + offset) }
+                } else {
+                    words = rawWords
+                }
             } catch {
                 print("Failed to decode timestamps: \(error)")
             }

@@ -6,6 +6,8 @@ struct TeleprompterCanvasView: View {
     let waveform: WaveformPeaks?
     let currentTime: Double
     let duration: Double
+    let trimStart: Double
+    let trimDuration: Double
 
     /// The "now" line sits at 20% from the left edge.
     private let nowLineRatio: CGFloat = 0.2
@@ -56,7 +58,8 @@ struct TeleprompterCanvasView: View {
         let barW: CGFloat = 2
         let step: CGFloat = 3 // barW + gap
 
-        let centerPeakIdx = currentTime / peakDuration
+        let trimmedCurrentTime = currentTime - trimStart
+        let centerPeakIdx = trimmedCurrentTime / peakDuration
         var px: CGFloat = 0
         while px < W {
             let peakIdx = Int(centerPeakIdx + Double(px - nowX) / Double(step))
