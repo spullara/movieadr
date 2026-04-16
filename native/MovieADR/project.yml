@@ -1,5 +1,6 @@
 name: MovieADR
 options:
+  postGenCommand: ./fix-schemes.sh
   bundleIdPrefix: com.movieadr
   deploymentTarget:
     iOS: "17.0"
