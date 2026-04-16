@@ -9,6 +9,9 @@ final class PlayerController {
     private(set) var duration: Double = 0
     private(set) var isPlaying: Bool = false
 
+    var trimStart: Double = 0
+    var trimEnd: Double? = nil
+
     private var timeObserver: Any?
     private var instrumentalPlayer: AVPlayer?
     private var syncTimer: Timer?
@@ -26,6 +29,10 @@ final class PlayerController {
     }
 
     func play() {
+        // If before trim start, seek to it
+        if currentTime < trimStart {
+            seek(to: trimStart)
+        }
         player.play()
         isPlaying = true
         if let ip = instrumentalPlayer {
@@ -48,10 +55,11 @@ final class PlayerController {
     }
 
     func seek(to time: Double) {
-        let cmTime = CMTime(seconds: time, preferredTimescale: 600)
+        let clampedTime = max(trimStart, min(time, trimEnd ?? duration))
+        let cmTime = CMTime(seconds: clampedTime, preferredTimescale: 600)
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
         instrumentalPlayer?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
-        currentTime = time
+        currentTime = clampedTime
     }
 
     func loadInstrumental(url: URL) {
@@ -81,6 +89,12 @@ final class PlayerController {
             guard let self else { return }
             self.currentTime = time.seconds
             self.isPlaying = self.player.timeControlStatus == .playing
+
+            // Stop at trim end
+            if let trimEnd = self.trimEnd, time.seconds >= trimEnd {
+                self.pause()
+                self.seek(to: self.trimStart)
+            }
         }
 
         // Observe duration

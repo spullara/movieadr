@@ -98,6 +98,15 @@ struct PlayerContainerView: View {
         let videoURL = project.directoryURL.appendingPathComponent(videoPath)
         controller = PlayerController(url: videoURL)
 
+        // Seek to trim start if the video was trimmed
+        if let trimStart = project.trimStart {
+            controller?.seek(to: trimStart)
+        }
+
+        // Set trim bounds so playback stays within the trimmed range
+        controller?.trimStart = project.trimStart ?? 0
+        controller?.trimEnd = project.trimEnd
+
         // Load instrumental audio (mutes video, plays instrumental instead)
         if let instrumentalPath = project.instrumentalRelativePath {
             let instrumentalURL = project.directoryURL.appendingPathComponent(instrumentalPath)

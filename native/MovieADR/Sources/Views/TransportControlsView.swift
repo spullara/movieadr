@@ -15,7 +15,7 @@ struct TransportControlsView: View {
                     get: { controller.currentTime },
                     set: { controller.seek(to: $0) }
                 ),
-                in: 0...max(controller.duration, 0.01)
+                in: controller.trimStart...max(controller.trimEnd ?? controller.duration, controller.trimStart + 0.01)
             )
             .disabled(recordingVM?.isRecording ?? false)
 
@@ -32,7 +32,7 @@ struct TransportControlsView: View {
                 .buttonStyle(.bordered)
 
                 // Skip backward 5s (disabled during recording)
-                Button(action: { controller.seek(to: max(0, controller.currentTime - 5)) }) {
+                Button(action: { controller.seek(to: max(controller.trimStart, controller.currentTime - 5)) }) {
                     Image(systemName: "gobackward.5")
                 }
                 .buttonStyle(.plain)
@@ -40,7 +40,7 @@ struct TransportControlsView: View {
                 .disabled(recordingVM?.isRecording ?? false)
 
                 // Skip forward 5s (disabled during recording)
-                Button(action: { controller.seek(to: min(controller.duration, controller.currentTime + 5)) }) {
+                Button(action: { controller.seek(to: min(controller.trimEnd ?? controller.duration, controller.currentTime + 5)) }) {
                     Image(systemName: "goforward.5")
                 }
                 .buttonStyle(.plain)
@@ -94,11 +94,10 @@ struct TransportControlsView: View {
             vm.stopRecording(modelContext: modelContext)
             controller.pause()
         } else {
-            // Start recording and video from current position
+            // Start recording - seek to trim start first
+            controller.seek(to: controller.trimStart)
             vm.startRecording(modelContext: modelContext)
-            if !controller.isPlaying {
-                controller.play()
-            }
+            controller.play()
         }
     }
 
