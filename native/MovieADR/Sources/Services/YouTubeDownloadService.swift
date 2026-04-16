@@ -149,16 +149,29 @@ final class YouTubeDownloadService {
 
         return try await withCheckedThrowingContinuation { continuation in
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: ytDlpPath)
-            process.arguments = [
+            process.executableURL = URL(fileURLWithPath: "/bin/sh")
+            // Build the full command with properly escaped arguments
+            let escapedPath = ytDlpPath.replacingOccurrences(of: "'", with: "'\\''")
+            let escapedTemplate = outputTemplate.replacingOccurrences(of: "'", with: "'\\''")
+            let escapedUrl = url.replacingOccurrences(of: "'", with: "'\\''")
+            var cmdParts = [
+                "'\(escapedPath)'",
                 "--no-playlist",
                 "--no-check-certificates",
-                "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+                "-f", "'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'",
                 "--merge-output-format", "mp4",
-                "-o", outputTemplate,
-                "--newline",  // Print progress on new lines for easier parsing
-                url
+                "-o", "'\(escapedTemplate)'",
+                "--newline",
             ]
+            // Add ffmpeg location if found
+            let ffmpegPaths = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
+            if let ffmpegPath = ffmpegPaths.first(where: { FileManager.default.fileExists(atPath: $0) }) {
+                let ffmpegDir = URL(fileURLWithPath: ffmpegPath).deletingLastPathComponent().path
+                cmdParts.insert(contentsOf: ["--ffmpeg-location", "'\(ffmpegDir)'"], at: 3)
+            }
+            cmdParts.append("'\(escapedUrl)'")
+            let fullCommand = cmdParts.joined(separator: " ")
+            process.arguments = ["-c", fullCommand]
 
             let stdoutPipe = Pipe()
             let stderrPipe = Pipe()
@@ -213,13 +226,6 @@ final class YouTubeDownloadService {
                 env["PATH"] = extraPaths
             }
             process.environment = env
-
-            // Help yt-dlp find ffmpeg
-            let ffmpegPaths = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"]
-            if let ffmpegPath = ffmpegPaths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
-                let ffmpegDir = URL(fileURLWithPath: ffmpegPath).deletingLastPathComponent().path
-                process.arguments?.insert(contentsOf: ["--ffmpeg-location", ffmpegDir], at: 1)
-            }
 
             do {
                 try process.run()
