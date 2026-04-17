@@ -128,6 +128,25 @@ final class PlayerController {
                 await MainActor.run {
                     player.replaceCurrentItem(with: playerItem)
                     print("[PlayerController] Composition loaded, item status: \(playerItem.status.rawValue)")
+
+                    // Wait for composition to be ready, then update duration and display first frame
+                    Task { @MainActor in
+                        // Poll for ready status (simpler than KVO for a one-time check)
+                        while playerItem.status == .unknown {
+                            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                        }
+                        if playerItem.status == .readyToPlay {
+                            if let dur = try? await playerItem.asset.load(.duration) {
+                                self.duration = dur.seconds
+                            }
+                            // Seek to force first frame display
+                            let seekTime = CMTime(seconds: max(self.trimStart, self.currentTime), preferredTimescale: 600)
+                            await self.player.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+                            print("[PlayerController] Composition ready, duration=\(self.duration)")
+                        } else {
+                            print("[PlayerController] Composition failed: \(String(describing: playerItem.error))")
+                        }
+                    }
                 }
             } catch {
                 print("[PlayerController] Failed to create composition: \(error)")
