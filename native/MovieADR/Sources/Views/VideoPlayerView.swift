@@ -62,6 +62,21 @@ final class PlayerController {
         currentTime = clampedTime
     }
 
+    func seek(to time: Double, completion: @escaping () -> Void) {
+        let clampedTime = max(trimStart, min(time, trimEnd ?? duration))
+        let cmTime = CMTime(seconds: clampedTime, preferredTimescale: 600)
+        currentTime = clampedTime
+        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+            if let ip = self?.instrumentalPlayer {
+                ip.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
+                    completion()
+                }
+            } else {
+                completion()
+            }
+        }
+    }
+
     func loadInstrumental(url: URL) {
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         player.isMuted = true
@@ -90,8 +105,9 @@ final class PlayerController {
             self.currentTime = time.seconds
             self.isPlaying = self.player.timeControlStatus == .playing
 
-            // Stop at trim end
-            if let trimEnd = self.trimEnd, time.seconds >= trimEnd {
+            // Stop at trim end (only while actually playing to avoid seek loops)
+            if self.player.timeControlStatus == .playing,
+               let trimEnd = self.trimEnd, time.seconds >= trimEnd {
                 self.pause()
                 self.seek(to: self.trimStart)
             }

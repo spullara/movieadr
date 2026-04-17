@@ -94,10 +94,11 @@ struct TransportControlsView: View {
             vm.stopRecording(modelContext: modelContext)
             controller.pause()
         } else {
-            // Start recording - seek to trim start first
-            controller.seek(to: controller.trimStart)
+            // Start recording - seek to trim start first, then play
             vm.startRecording(modelContext: modelContext)
-            controller.play()
+            controller.seek(to: controller.trimStart) {
+                controller.play()
+            }
         }
     }
 
