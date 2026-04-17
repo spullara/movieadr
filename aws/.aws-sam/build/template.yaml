@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: YouTube Download Lambda Service for MovieADR
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+Globals:
+  Function:
+    Timeout: 900
+    MemorySize: 2048
+Resources:
+  DownloadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+        - Id: ExpireDownloads
+          Status: Enabled
+          ExpirationInDays: 1
+  YouTubeDownloadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+      - arm64
+      EphemeralStorage:
+        Size: 10240
+      Environment:
+        Variables:
+          S3_BUCKET:
+            Ref: DownloadBucket
+      Policies:
+      - S3CrudPolicy:
+          BucketName:
+            Ref: DownloadBucket
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+          - '*'
+          AllowMethods:
+          - POST
+          AllowHeaders:
+          - Content-Type
+      ImageUri: youtubedownloadfunction:latest
+    Metadata:
+      DockerContext: /Users/sam/Projects/moviekaraoke/aws/functions/youtube-download
+      DockerTag: latest
+      Dockerfile: Dockerfile
+      SamResourceId: YouTubeDownloadFunction
+Outputs:
+  YouTubeDownloadFunctionUrl:
+    Description: Lambda Function URL for YouTube downloads
+    Value:
+      Fn::GetAtt:
+      - YouTubeDownloadFunctionUrl
+      - FunctionUrl
+  DownloadBucketName:
+    Description: S3 bucket for temporary downloads
+    Value:
+      Ref: DownloadBucket
