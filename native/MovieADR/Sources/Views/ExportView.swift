@@ -4,6 +4,7 @@ import Photos
 #endif
 #if os(macOS)
 import AppKit
+import UniformTypeIdentifiers
 #endif
 
 /// Lets the user pick a take, export the video with mixed audio, and share/save the result.
@@ -132,6 +133,15 @@ struct ExportView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+            #if os(macOS)
+            Button(action: { saveFileDialog(url: url) }) {
+                Label("Save Video", systemImage: "square.and.arrow.down")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.borderedProminent)
+            #else
             ShareLink(item: url) {
                 Label("Share / Save Video", systemImage: "square.and.arrow.up")
                     .font(.headline)
@@ -139,17 +149,6 @@ struct ExportView: View {
                     .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
-
-            #if os(macOS)
-            Button(action: {
-                NSWorkspace.shared.activateFileViewerSelecting([url])
-            }) {
-                Label("Reveal in Finder", systemImage: "folder")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(.bordered)
             #endif
 
             #if os(iOS)
@@ -188,6 +187,27 @@ struct ExportView: View {
             }
         }
     }
+
+    #if os(macOS)
+    private func saveFileDialog(url: URL) {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.mpeg4Movie]
+        panel.nameFieldStringValue = url.lastPathComponent
+        panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+
+        if panel.runModal() == .OK, let dest = panel.url {
+            do {
+                if FileManager.default.fileExists(atPath: dest.path) {
+                    try FileManager.default.removeItem(at: dest)
+                }
+                try FileManager.default.copyItem(at: url, to: dest)
+                NSWorkspace.shared.activateFileViewerSelecting([dest])
+            } catch {
+                errorMessage = "Failed to save: \(error.localizedDescription)"
+            }
+        }
+    }
+    #endif
 
     #if os(iOS)
     private func saveToPhotos(url: URL) {
