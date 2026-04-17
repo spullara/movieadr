@@ -31,7 +31,7 @@ final class AudioRecordingService {
 
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])
+        try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP])
         try session.setActive(true)
         #endif
 
@@ -55,12 +55,35 @@ final class AudioRecordingService {
         )
 
         // Install tap on input node — record audio, compute level, do NOT route to output
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] buffer, _ in
+        // Pass nil format to use the input node's native hardware format (avoids format mismatch crash)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] buffer, _ in
             guard let self, let file = self.audioFile else { return }
 
-            // Write buffer to file
+            // Write buffer to file — convert to mono if input is multi-channel
             do {
-                try file.write(from: buffer)
+                if buffer.format.channelCount == 1 {
+                    try file.write(from: buffer)
+                } else {
+                    // Convert multi-channel to mono
+                    let monoFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: buffer.format.sampleRate, channels: 1, interleaved: false)!
+                    if let converter = AVAudioConverter(from: buffer.format, to: monoFormat),
+                       let monoBuffer = AVAudioPCMBuffer(pcmFormat: monoFormat, frameCapacity: buffer.frameLength) {
+                        var error: NSError?
+                        converter.convert(to: monoBuffer, error: &error) { _, outStatus in
+                            outStatus.pointee = .haveData
+                            return buffer
+                        }
+                        if error == nil {
+                            monoBuffer.frameLength = buffer.frameLength
+                            try file.write(from: monoBuffer)
+                        } else {
+                            // Fallback: write first channel only
+                            try file.write(from: buffer)
+                        }
+                    } else {
+                        try file.write(from: buffer)
+                    }
+                }
             } catch {
                 print("AudioRecordingService: write error: \(error)")
             }
