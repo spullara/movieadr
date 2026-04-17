@@ -51,6 +51,12 @@ final class PlayerController {
         } else {
             player.play()
             isPlaying = true
+            print("[PlayerController] player.play() called, rate=\(player.rate), timeControlStatus=\(player.timeControlStatus.rawValue)")
+            // Check again after a moment
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self else { return }
+                print("[PlayerController] 0.5s later: rate=\(player.rate), timeControlStatus=\(player.timeControlStatus.rawValue), error=\(String(describing: player.currentItem?.error))")
+            }
         }
     }
 
@@ -121,10 +127,10 @@ final class PlayerController {
                 let playerItem = AVPlayerItem(asset: composition)
                 await MainActor.run {
                     player.replaceCurrentItem(with: playerItem)
+                    print("[PlayerController] Composition loaded, item status: \(playerItem.status.rawValue)")
                 }
             } catch {
-                print("Failed to create composition: \(error)")
-                // Fall back to muted video (no instrumental)
+                print("[PlayerController] Failed to create composition: \(error)")
             }
         }
     }
