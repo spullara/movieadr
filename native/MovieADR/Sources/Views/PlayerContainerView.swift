@@ -88,6 +88,18 @@ struct PlayerContainerView: View {
         } message: {
             Text(recordingVM?.error ?? "")
         }
+        .onChange(of: recordingVM?.takePlaybackRequested) { _, take in
+            if take != nil, let controller {
+                controller.seek(to: controller.trimStart) {
+                    controller.play()
+                }
+            }
+        }
+        .onChange(of: recordingVM?.playingTake) { _, take in
+            if take == nil, let controller {
+                controller.pause()
+            }
+        }
     }
 
     private func loadProject() {

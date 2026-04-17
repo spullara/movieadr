@@ -22,6 +22,7 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "MovieADR needs microphone access to record your dialogue"
         INFOPLIST_KEY_NSDocumentsFolderUsageDescription: "MovieADR needs access to your documents to import and export videos"
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "MovieADR needs access to save exported videos to your photo library"
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"

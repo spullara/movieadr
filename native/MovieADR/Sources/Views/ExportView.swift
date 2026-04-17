@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(iOS)
+import Photos
+#endif
 
 /// Lets the user pick a take, export the video with mixed audio, and share/save the result.
 struct ExportView: View {
@@ -134,6 +137,22 @@ struct ExportView: View {
             }
             .buttonStyle(.borderedProminent)
 
+            #if os(iOS)
+            Button(action: { saveToPhotos(url: url) }) {
+                Label("Save to Photos", systemImage: "photo.on.rectangle")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.bordered)
+            #endif
+
+            if let error = errorMessage {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+
             Button("Done") { dismiss() }
                 .buttonStyle(.bordered)
         }
@@ -154,6 +173,22 @@ struct ExportView: View {
             }
         }
     }
+
+    #if os(iOS)
+    private func saveToPhotos(url: URL) {
+        PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+        } completionHandler: { success, error in
+            DispatchQueue.main.async {
+                if success {
+                    self.errorMessage = nil
+                } else {
+                    self.errorMessage = error?.localizedDescription ?? "Failed to save to Photos"
+                }
+            }
+        }
+    }
+    #endif
 
     private func formatDuration(_ seconds: Double) -> String {
         let mins = Int(seconds) / 60

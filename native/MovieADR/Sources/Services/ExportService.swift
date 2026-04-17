@@ -116,10 +116,11 @@ final class ExportService {
         let outputURL = projectDir.appendingPathComponent(outputFilename)
         try? FileManager.default.removeItem(at: outputURL)
 
-        // 6. Export with passthrough preset (copies video, re-encodes audio)
+        // 6. Export with highest quality preset (re-encodes video, but required
+        // because AVAssetExportPresetPassthrough cannot apply an audio mix).
         guard let session = AVAssetExportSession(
             asset: composition,
-            presetName: AVAssetExportPresetPassthrough
+            presetName: AVAssetExportPresetHighestQuality
         ) else {
             throw ExportError.exportFailed("Could not create export session.")
         }

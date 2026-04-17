@@ -15,6 +15,9 @@ final class RecordingViewModel {
 
     /// The take being played back (nil = not playing any take)
     private(set) var playingTake: Take?
+    /// Signal to the UI that playback of this take has been requested.
+    /// PlayerContainerView observes this to start the main video+instrumental in sync.
+    private(set) var takePlaybackRequested: Take?
     private var takePlayer: AVPlayer?
     private var takeTimeObserver: Any?
 
@@ -123,6 +126,7 @@ final class RecordingViewModel {
         let player = AVPlayer(url: url)
         self.takePlayer = player
         self.playingTake = take
+        self.takePlaybackRequested = take
 
         // Observe end of playback
         NotificationCenter.default.addObserver(
@@ -140,6 +144,7 @@ final class RecordingViewModel {
         takePlayer?.pause()
         takePlayer = nil
         playingTake = nil
+        takePlaybackRequested = nil
     }
 
     /// Delete a take and its audio file
