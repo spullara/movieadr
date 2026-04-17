@@ -19,7 +19,11 @@ actor TranscriptionService {
     func loadModel(progress: @escaping (Double) -> Void) async throws {
         progress(0.0)
         let config = WhisperKitConfig()
+        #if os(iOS)
+        config.model = "small"
+        #else
         config.model = "large-v3"
+        #endif
         config.download = true
         config.prewarm = true
 
