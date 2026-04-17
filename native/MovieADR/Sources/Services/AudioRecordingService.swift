@@ -92,6 +92,11 @@ final class AudioRecordingService {
                 print("AudioRecordingService: write error: \(error)")
             }
 
+            // Log frame count periodically (~1s at 48kHz)
+            if let file = self.audioFile, file.length % 48000 == 0 {
+                print("[AudioRecordingService] Written frames: \(file.length)")
+            }
+
             // Compute RMS level for metering
             let level = self.computeRMSLevel(buffer: buffer)
             Task { @MainActor in
@@ -105,15 +110,18 @@ final class AudioRecordingService {
         try engine.start()
         self.audioEngine = engine
         isRecording = true
+        print("[AudioRecordingService] Recording started, format: \(tapFormat), to: \(url.lastPathComponent)")
     }
 
     func stopRecording() {
+        print("[AudioRecordingService] stopRecording - audioFile frames: \(audioFile?.length ?? -1)")
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine?.stop()
         audioEngine = nil
         audioFile = nil
         isRecording = false
         audioLevel = 0
+        print("[AudioRecordingService] stopRecording complete")
     }
 
     // MARK: - Level Metering

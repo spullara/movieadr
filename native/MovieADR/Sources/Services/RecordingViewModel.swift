@@ -88,10 +88,17 @@ final class RecordingViewModel {
         // Get duration synchronously from the file
         do {
             let audioFile = try AVAudioFile(forReading: url)
-            let duration = Double(audioFile.length) / audioFile.processingFormat.sampleRate
+            let frames = audioFile.length
+            let sampleRate = audioFile.processingFormat.sampleRate
+            let duration = Double(frames) / sampleRate
+            print("[RecordingVM] File: \(url.lastPathComponent), frames=\(frames), sampleRate=\(sampleRate), duration=\(duration)")
+            let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) ?? 0
+            print("[RecordingVM] File size: \(fileSize)")
             take.duration = duration
         } catch {
-            print("Failed to get recording duration: \(error)")
+            print("[RecordingVM] Failed to get recording duration: \(error)")
+            let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
+            print("[RecordingVM] File exists: \(FileManager.default.fileExists(atPath: url.path)), size: \(attrs?[.size] ?? 0)")
             take.duration = 0
         }
 
