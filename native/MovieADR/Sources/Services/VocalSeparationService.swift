@@ -1,5 +1,6 @@
 import Foundation
 import DemucsMLX
+import MLX
 
 /// Manages Demucs model loading and vocal/instrumental separation.
 actor VocalSeparationService {
@@ -11,8 +12,27 @@ actor VocalSeparationService {
     func loadModel(progress: @escaping (Double) -> Void) async throws {
         progress(0.0)
 
+        #if os(iOS)
+        // Reduce MLX GPU memory cache for iOS - recommended by demucs-mlx-swift docs
+        Memory.cacheLimit = 2 * 1024 * 1024  // 2 MB
+        #endif
+
         // DemucsSeparator init downloads models automatically if not cached
+        #if os(iOS)
+        let sep = try DemucsSeparator(
+            modelName: "htdemucs",
+            parameters: DemucsSeparationParameters(
+                shifts: 1,
+                overlap: 0.25,
+                split: true,
+                segmentSeconds: nil,
+                batchSize: 1,
+                seed: 42
+            )
+        )
+        #else
         let sep = try DemucsSeparator(modelName: "htdemucs")
+        #endif
         self.separator = sep
 
         progress(1.0)
