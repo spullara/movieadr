@@ -59,7 +59,7 @@ struct ExportView: View {
             Text("Select a take to export")
                 .font(.headline)
 
-            List(project.takes.sorted(by: { $0.takeNumber < $1.takeNumber }), selection: $selectedTake) { take in
+            List(project.takes.sorted(by: { $0.takeNumber < $1.takeNumber })) { take in
                 HStack {
                     Image(systemName: selectedTake?.id == take.id ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selectedTake?.id == take.id ? .blue : .secondary)
@@ -81,6 +81,7 @@ struct ExportView: View {
                 .onTapGesture { selectedTake = take }
             }
             .listStyle(.plain)
+            .frame(minHeight: 100, maxHeight: 200)
 
             if let error = errorMessage {
                 Text(error)
@@ -175,7 +176,11 @@ struct ExportView: View {
     // MARK: - Actions
 
     private func startExport() {
-        guard let take = selectedTake else { return }
+        guard let take = selectedTake else {
+            errorMessage = "Please select a take first"
+            return
+        }
+        print("[Export] Starting export for take \(take.takeNumber)")
         errorMessage = nil
 
         Task {
