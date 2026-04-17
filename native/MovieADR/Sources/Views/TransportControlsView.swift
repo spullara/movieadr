@@ -7,6 +7,8 @@ struct TransportControlsView: View {
     var recordingVM: RecordingViewModel?
     var modelContext: ModelContext
 
+    @State private var isEditing = false
+
     var body: some View {
         VStack(spacing: 4) {
             // Seek slider (disabled during recording, hidden until duration loads)
@@ -14,9 +16,16 @@ struct TransportControlsView: View {
                 Slider(
                     value: Binding(
                         get: { controller.currentTime },
-                        set: { controller.seek(to: $0) }
+                        set: { newValue in
+                            if isEditing {
+                                controller.seek(to: newValue)
+                            }
+                        }
                     ),
-                    in: controller.trimStart...max(controller.trimEnd ?? controller.duration, controller.trimStart + 0.01)
+                    in: controller.trimStart...max(controller.trimEnd ?? controller.duration, controller.trimStart + 0.01),
+                    onEditingChanged: { editing in
+                        isEditing = editing
+                    }
                 )
                 .disabled(recordingVM?.isRecording ?? false)
             } else {
