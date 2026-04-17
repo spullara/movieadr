@@ -20,7 +20,7 @@ actor VocalSeparationService {
         // DemucsSeparator init downloads models automatically if not cached
         #if os(iOS)
         let sep = try DemucsSeparator(
-            modelName: "htdemucs",
+            modelName: "htdemucs_ft",
             parameters: DemucsSeparationParameters(
                 shifts: 1,
                 overlap: 0.25,
@@ -31,7 +31,7 @@ actor VocalSeparationService {
             )
         )
         #else
-        let sep = try DemucsSeparator(modelName: "htdemucs")
+        let sep = try DemucsSeparator(modelName: "htdemucs_ft")
         #endif
         self.separator = sep
 
