@@ -60,17 +60,23 @@ struct TeleprompterCanvasView: View {
 
         let trimmedCurrentTime = currentTime - trimStart
         let centerPeakIdx = trimmedCurrentTime / peakDuration
-        var px: CGFloat = 0
-        while px < W {
-            let peakIdx = Int(centerPeakIdx + Double(px - nowX) / Double(step))
-            guard peakIdx >= 0, peakIdx < waveform.peaks.count else {
-                px += step
-                continue
-            }
-            let barH = min(CGFloat(waveform.peaks[peakIdx]) * waveH * 10, waveH)
+
+        // Draw peaks aligned to peak boundaries, not pixel boundaries
+        // Calculate the first and last visible peak indices
+        let leftmostPeakIdx = Int(floor(centerPeakIdx - Double(nowX) / Double(step)))
+        let rightmostPeakIdx = Int(ceil(centerPeakIdx + Double(W - nowX) / Double(step)))
+
+        for peakIdx in leftmostPeakIdx...rightmostPeakIdx {
+            guard peakIdx >= 0, peakIdx < waveform.peaks.count else { continue }
+
+            // Calculate pixel position from peak index (stable, no jitter)
+            let px = nowX + CGFloat(Double(peakIdx) - centerPeakIdx) * step
+            guard px >= -step, px <= W + step else { continue }
+
+            let barH = min(CGFloat(waveform.peaks[peakIdx]) * waveH * 3.5, waveH)
 
             let color: Color
-            if px < nowX {
+            if px < nowX - step/2 {
                 color = Color.blue.opacity(0.3)
             } else if abs(px - nowX) < step {
                 color = Color.red.opacity(0.9)
@@ -80,7 +86,6 @@ struct TeleprompterCanvasView: View {
 
             let rect = CGRect(x: px, y: waveY - barH / 2, width: barW, height: max(barH, 1))
             context.fill(Path(rect), with: .color(color))
-            px += step
         }
     }
 
@@ -125,8 +130,11 @@ struct TeleprompterCanvasView: View {
 
                 var text = context.resolve(Text(word.word).font(resolvedFont))
                 let textSize = text.measure(in: CGSize(width: W, height: H))
-                let x = max(tsX, nextMinX)
-                nextMinX = x + textSize.width + wordGap
+
+                // Use timestamp position, but prevent overlap by at most half a word width
+                let minShift = max(0, nextMinX - tsX)
+                let x = tsX + min(minShift, textSize.width * 0.3)
+                nextMinX = x + textSize.width + wordGap * 0.3
 
                 // Skip off-screen words
                 if x + textSize.width < 0 || x > W { continue }
