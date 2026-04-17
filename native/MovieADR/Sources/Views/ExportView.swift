@@ -2,6 +2,9 @@ import SwiftUI
 #if os(iOS)
 import Photos
 #endif
+#if os(macOS)
+import AppKit
+#endif
 
 /// Lets the user pick a take, export the video with mixed audio, and share/save the result.
 struct ExportView: View {
@@ -136,6 +139,18 @@ struct ExportView: View {
                     .padding(.vertical, 8)
             }
             .buttonStyle(.borderedProminent)
+
+            #if os(macOS)
+            Button(action: {
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            }) {
+                Label("Reveal in Finder", systemImage: "folder")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+            .buttonStyle(.bordered)
+            #endif
 
             #if os(iOS)
             Button(action: { saveToPhotos(url: url) }) {
