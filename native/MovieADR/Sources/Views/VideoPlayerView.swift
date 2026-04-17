@@ -29,10 +29,8 @@ final class PlayerController {
     }
 
     func play() {
-        print("[PlayerController] play() called, currentTime=\(currentTime), trimStart=\(trimStart), trimEnd=\(String(describing: trimEnd))")
         // If before trim start, seek to it before starting playback
         if currentTime < trimStart {
-            print("[PlayerController] Seeking to trimStart before play")
             seek(to: trimStart) { [weak self] in
                 guard let self else { return }
                 self.player.play()
@@ -68,7 +66,6 @@ final class PlayerController {
 
     func seek(to time: Double) {
         let clampedTime = max(trimStart, min(time, trimEnd ?? duration))
-        print("[PlayerController] seek(to: \(time)) -> clamped to \(clampedTime), duration=\(duration), trimEnd=\(String(describing: trimEnd))")
         let cmTime = CMTime(seconds: clampedTime, preferredTimescale: 600)
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
         instrumentalPlayer?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
@@ -77,7 +74,6 @@ final class PlayerController {
 
     func seek(to time: Double, completion: @escaping () -> Void) {
         let clampedTime = max(trimStart, min(time, trimEnd ?? duration))
-        print("[PlayerController] seek(to: \(time), completion) -> clamped to \(clampedTime), duration=\(duration), trimEnd=\(String(describing: trimEnd))")
         let cmTime = CMTime(seconds: clampedTime, preferredTimescale: 600)
         currentTime = clampedTime
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
@@ -122,7 +118,6 @@ final class PlayerController {
             // Stop at trim end (only while actually playing to avoid seek loops)
             if self.player.timeControlStatus == .playing,
                let trimEnd = self.trimEnd, time.seconds >= trimEnd {
-                print("[PlayerController] TRIM END HIT: time=\(time.seconds), trimEnd=\(trimEnd), seeking to trimStart=\(self.trimStart)")
                 self.pause()
                 self.seek(to: self.trimStart)
             }

@@ -9,15 +9,21 @@ struct TransportControlsView: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            // Seek slider (disabled during recording)
-            Slider(
-                value: Binding(
-                    get: { controller.currentTime },
-                    set: { controller.seek(to: $0) }
-                ),
-                in: controller.trimStart...max(controller.trimEnd ?? controller.duration, controller.trimStart + 0.01)
-            )
-            .disabled(recordingVM?.isRecording ?? false)
+            // Seek slider (disabled during recording, hidden until duration loads)
+            if controller.duration > 0 {
+                Slider(
+                    value: Binding(
+                        get: { controller.currentTime },
+                        set: { controller.seek(to: $0) }
+                    ),
+                    in: controller.trimStart...max(controller.trimEnd ?? controller.duration, controller.trimStart + 0.01)
+                )
+                .disabled(recordingVM?.isRecording ?? false)
+            } else {
+                // Placeholder while duration loads
+                ProgressView()
+                    .frame(height: 20)
+            }
 
             HStack {
                 // Play/pause
