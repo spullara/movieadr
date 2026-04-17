@@ -96,8 +96,11 @@ struct TransportControlsView: View {
         } else {
             // Start recording - seek to trim start first, then play
             vm.startRecording(modelContext: modelContext)
-            controller.seek(to: controller.trimStart) {
-                controller.play()
+            // Only play if recording actually started
+            if vm.isRecording {
+                controller.seek(to: controller.trimStart) {
+                    controller.play()
+                }
             }
         }
     }

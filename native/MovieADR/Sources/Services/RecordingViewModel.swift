@@ -37,7 +37,7 @@ final class RecordingViewModel {
         #if os(iOS)
         if !recorder.headphonesConnected {
             showHeadphoneWarning = true
-            return
+            // Continue recording anyway — user can dismiss and re-record with headphones if needed
         }
         #endif
 
