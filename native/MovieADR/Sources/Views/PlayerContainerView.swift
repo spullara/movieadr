@@ -13,59 +13,55 @@ struct PlayerContainerView: View {
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        VStack(spacing: 0) {
-            if let controller {
-                // Video + overlay
-                ZStack {
-                    VideoLayerView(player: controller.player)
+        GeometryReader { geo in
+            let isPortrait = geo.size.height > geo.size.width
 
-                    TeleprompterCanvasView(
-                        words: words,
-                        waveform: waveform,
-                        currentTime: controller.currentTime,
-                        duration: controller.duration,
-                        trimStart: controller.trimStart,
-                        trimDuration: (controller.trimEnd ?? controller.duration) - controller.trimStart
-                    )
-                }
-                .aspectRatio(16.0 / 9.0, contentMode: .fit)
-                .clipped()
+            VStack(spacing: 0) {
+                if let controller {
+                    // Video + overlay — fills remaining space
+                    ZStack {
+                        VideoLayerView(player: controller.player)
 
-                // Recording level meter (shown during recording)
-                if let vm = recordingVM {
-                    RecordingLevelMeterView(
-                        level: vm.audioLevel,
-                        isRecording: vm.isRecording
-                    )
-                    .padding(.horizontal, 12)
-                    .padding(.top, 4)
-                }
-
-                // Transport controls with record button
-                if let vm = recordingVM {
-                    TransportControlsView(
-                        controller: controller,
-                        recordingVM: vm,
-                        modelContext: modelContext
-                    )
-                } else {
-                    TransportControlsView(
-                        controller: controller,
-                        recordingVM: nil,
-                        modelContext: modelContext
-                    )
-                }
-
-                // Take list
-                if let vm = recordingVM {
-                    TakeListView(
-                        project: project,
-                        recordingVM: vm
-                    )
-                }
-            } else {
-                ProgressView("Loading video…")
+                        TeleprompterCanvasView(
+                            words: words,
+                            waveform: waveform,
+                            currentTime: controller.currentTime,
+                            duration: controller.duration,
+                            trimStart: controller.trimStart,
+                            trimDuration: (controller.trimEnd ?? controller.duration) - controller.trimStart
+                        )
+                    }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+
+                    // Recording level meter (shown during recording)
+                    if let vm = recordingVM {
+                        RecordingLevelMeterView(
+                            level: vm.audioLevel,
+                            isRecording: vm.isRecording
+                        )
+                        .padding(.horizontal, 12)
+                        .padding(.top, 4)
+                    }
+
+                    // Transport controls with record button
+                    TransportControlsView(
+                        controller: controller,
+                        recordingVM: recordingVM,
+                        modelContext: modelContext
+                    )
+
+                    // Take list
+                    if let vm = recordingVM {
+                        TakeListView(
+                            project: project,
+                            recordingVM: vm
+                        )
+                    }
+                } else {
+                    ProgressView("Loading video…")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
         }
         .background(.black)

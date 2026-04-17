@@ -35,10 +35,11 @@ struct TakeListView: View {
                         }
                     }
                 }
-                .frame(maxHeight: 200)
+                .frame(maxHeight: 80)
             }
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .colorScheme(.dark)
         .sheet(isPresented: $showExportSheet) {
             ExportView(project: project)
