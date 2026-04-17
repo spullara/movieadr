@@ -167,8 +167,17 @@ struct TeleprompterCanvasView: View {
 
         // Draw each line at its assigned slot
         for layout in visibleLayouts {
-            // Slots go upward from baseY: 0 = baseY, 1 = baseY - lineSpacing, etc.
-            let y = baseY - CGFloat(layout.ySlot) * lineSpacing
+            // Slots alternate: 0 = base, 1 = above, 2 = below, 3 = further above, 4 = further below
+            let slotOffset: CGFloat
+            switch layout.ySlot {
+            case 0: slotOffset = 0
+            case 1: slotOffset = -lineSpacing
+            case 2: slotOffset = lineSpacing
+            case 3: slotOffset = -lineSpacing * 2
+            case 4: slotOffset = lineSpacing * 2
+            default: slotOffset = 0
+            }
+            let y = baseY + slotOffset
 
             var runX: CGFloat = -.infinity
             for word in layout.line {
