@@ -133,16 +133,13 @@ struct TeleprompterCanvasView: View {
             // Compute horizontal extent of this line
             var lineRightX: CGFloat = -.infinity
             var lineLeftX: CGFloat = .infinity
-            var runX: CGFloat = -.infinity
             for word in line {
                 let tsX = nowX + CGFloat(word.start - currentTime) * pxPerSec
                 let resolvedFont = Font.system(size: fontSize, weight: .bold)
                 let text = context.resolve(Text(word.word).font(resolvedFont))
                 let textSize = text.measure(in: CGSize(width: W, height: H))
-                let x = max(tsX, runX)
-                runX = x + textSize.width + wordGap
-                lineLeftX = min(lineLeftX, x)
-                lineRightX = max(lineRightX, x + textSize.width)
+                lineLeftX = min(lineLeftX, tsX)
+                lineRightX = max(lineRightX, tsX + textSize.width)
             }
 
             visibleLayouts.append(LineLayout(line: line, leftX: lineLeftX, rightX: lineRightX, ySlot: 0))
@@ -179,15 +176,13 @@ struct TeleprompterCanvasView: View {
             }
             let y = baseY + slotOffset
 
-            var runX: CGFloat = -.infinity
             for word in layout.line {
                 let tsX = nowX + CGFloat(word.start - currentTime) * pxPerSec
                 let resolvedFont = Font.system(size: fontSize, weight: .bold)
 
                 var text = context.resolve(Text(word.word).font(resolvedFont))
                 let textSize = text.measure(in: CGSize(width: W, height: H))
-                let x = max(tsX, runX)
-                runX = x + textSize.width + wordGap
+                let x = tsX
 
                 // Skip off-screen words
                 if x + textSize.width < 0 || x > W { continue }
