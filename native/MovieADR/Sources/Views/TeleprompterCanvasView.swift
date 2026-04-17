@@ -98,7 +98,8 @@ struct TeleprompterCanvasView: View {
         let fontSize = max(14, min(22, H * 0.035))
         let pxPerSec = W * 0.15
         let baseY = H * 0.85
-        let wordGap = fontSize * 0.5
+        let wordGap = fontSize * 0.3
+        let lineSpacing = fontSize * 1.5
         let visibleLeft = currentTime - Double(nowX / pxPerSec) - 2
         let visibleRight = currentTime + Double((W - nowX) / pxPerSec) + 2
 
@@ -114,27 +115,70 @@ struct TeleprompterCanvasView: View {
         }
         if !currentLine.isEmpty { lines.append(currentLine) }
 
-        for (lineIdx, line) in lines.enumerated() {
-            // Only draw lines that are near the visible time range
+        // For each visible line, compute its horizontal extent and assign a vertical slot
+        // to avoid overlap. Words are always placed at their timestamp position.
+        struct LineLayout {
+            let line: [TimedWord]
+            let leftX: CGFloat
+            let rightX: CGFloat
+            var ySlot: Int
+        }
+
+        var visibleLayouts: [LineLayout] = []
+
+        for line in lines {
             guard let firstWord = line.first, let lastWord = line.last else { continue }
             if lastWord.end < visibleLeft || firstWord.start > visibleRight { continue }
 
-            // Alternate lines between just above and just below baseY (2 positions only)
-            let lineOffset = (lineIdx % 2 == 0) ? -fontSize * 0.8 : fontSize * 0.8
-            let y = baseY + lineOffset
-
-            var nextMinX: CGFloat = -.infinity
+            // Compute horizontal extent of this line
+            var lineRightX: CGFloat = -.infinity
+            var lineLeftX: CGFloat = .infinity
+            var runX: CGFloat = -.infinity
             for word in line {
+                let tsX = nowX + CGFloat(word.start - currentTime) * pxPerSec
+                let resolvedFont = Font.system(size: fontSize, weight: .bold)
+                let text = context.resolve(Text(word.word).font(resolvedFont))
+                let textSize = text.measure(in: CGSize(width: W, height: H))
+                let x = max(tsX, runX)
+                runX = x + textSize.width + wordGap
+                lineLeftX = min(lineLeftX, x)
+                lineRightX = max(lineRightX, x + textSize.width)
+            }
+
+            visibleLayouts.append(LineLayout(line: line, leftX: lineLeftX, rightX: lineRightX, ySlot: 0))
+        }
+
+        // Assign vertical slots: greedily place each line in the lowest slot
+        // that doesn't overlap horizontally with existing lines in that slot
+        for i in 0..<visibleLayouts.count {
+            var slot = 0
+            while true {
+                let overlaps = visibleLayouts[0..<i].contains { other in
+                    other.ySlot == slot &&
+                    visibleLayouts[i].leftX < other.rightX + wordGap * 2 &&
+                    visibleLayouts[i].rightX > other.leftX - wordGap * 2
+                }
+                if !overlaps { break }
+                slot += 1
+                if slot > 4 { break } // max 5 vertical slots
+            }
+            visibleLayouts[i].ySlot = slot
+        }
+
+        // Draw each line at its assigned slot
+        for layout in visibleLayouts {
+            // Slots go upward from baseY: 0 = baseY, 1 = baseY - lineSpacing, etc.
+            let y = baseY - CGFloat(layout.ySlot) * lineSpacing
+
+            var runX: CGFloat = -.infinity
+            for word in layout.line {
                 let tsX = nowX + CGFloat(word.start - currentTime) * pxPerSec
                 let resolvedFont = Font.system(size: fontSize, weight: .bold)
 
                 var text = context.resolve(Text(word.word).font(resolvedFont))
                 let textSize = text.measure(in: CGSize(width: W, height: H))
-
-                // Use timestamp position, but prevent overlap by at most half a word width
-                let minShift = max(0, nextMinX - tsX)
-                let x = tsX + min(minShift, textSize.width * 0.3)
-                nextMinX = x + textSize.width + wordGap * 0.3
+                let x = max(tsX, runX)
+                runX = x + textSize.width + wordGap
 
                 // Skip off-screen words
                 if x + textSize.width < 0 || x > W { continue }
@@ -155,10 +199,9 @@ struct TeleprompterCanvasView: View {
                     text.shading = .color(.white)
                 }
 
-                // Draw outline (stroke) then fill
+                // Draw outline then fill
                 var outlineText = text
                 outlineText.shading = .color(.black)
-                // Draw at slight offsets for outline effect
                 for dx in stride(from: -1.0, through: 1.0, by: 1.0) {
                     for dy in stride(from: -1.0, through: 1.0, by: 1.0) {
                         if dx == 0 && dy == 0 { continue }
