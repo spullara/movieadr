@@ -10,13 +10,13 @@ import UniformTypeIdentifiers
 /// Lets the user pick a take, export the video with mixed audio, and share/save the result.
 struct ExportView: View {
     let project: Project
+    var take: Take? = nil
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTake: Take?
     @State private var exportService = ExportService()
     @State private var exportedURL: URL?
     @State private var errorMessage: String?
-    @State private var showShareSheet = false
 
     var body: some View {
         NavigationStack {
@@ -40,6 +40,12 @@ struct ExportView: View {
                         exportService.cancel()
                         dismiss()
                     }
+                }
+            }
+            .task {
+                if let take, selectedTake == nil, exportedURL == nil, !exportService.isExporting {
+                    selectedTake = take
+                    startExport()
                 }
             }
         }

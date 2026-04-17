@@ -42,7 +42,9 @@ struct TakeListView: View {
         .padding(.vertical, 6)
         .colorScheme(.dark)
         .sheet(isPresented: $showExportSheet) {
-            ExportView(project: project)
+            if let take = exportTake {
+                ExportView(project: project, take: take)
+            }
         }
     }
 
