@@ -13,10 +13,10 @@ final class PlayerController {
     var trimEnd: Double? = nil
 
     private var timeObserver: Any?
-    private var instrumentalPlayer: AVPlayer?
-    private var syncTimer: Timer?
+    private let videoURL: URL
 
     init(url: URL) {
+        self.videoURL = url
         self.player = AVPlayer(url: url)
         setupObservers()
     }
@@ -25,39 +25,23 @@ final class PlayerController {
         if let obs = timeObserver {
             player.removeTimeObserver(obs)
         }
-        syncTimer?.invalidate()
     }
 
     func play() {
-        // If before trim start, seek to it before starting playback
         if currentTime < trimStart {
             seek(to: trimStart) { [weak self] in
-                guard let self else { return }
-                self.player.play()
-                self.isPlaying = true
-                if let ip = self.instrumentalPlayer {
-                    ip.seek(to: self.player.currentTime())
-                    ip.play()
-                    self.startSyncTimer()
-                }
+                self?.player.play()
+                self?.isPlaying = true
             }
         } else {
             player.play()
             isPlaying = true
-            if let ip = instrumentalPlayer {
-                ip.seek(to: player.currentTime())
-                ip.play()
-                startSyncTimer()
-            }
         }
     }
 
     func pause() {
         player.pause()
         isPlaying = false
-        instrumentalPlayer?.pause()
-        syncTimer?.invalidate()
-        syncTimer = nil
     }
 
     func togglePlayPause() {
@@ -68,7 +52,6 @@ final class PlayerController {
         let clampedTime = max(trimStart, min(time, trimEnd ?? duration))
         let cmTime = CMTime(seconds: clampedTime, preferredTimescale: 600)
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
-        instrumentalPlayer?.seek(to: cmTime)
         currentTime = clampedTime
     }
 
@@ -76,33 +59,57 @@ final class PlayerController {
         let clampedTime = max(trimStart, min(time, trimEnd ?? duration))
         let cmTime = CMTime(seconds: clampedTime, preferredTimescale: 600)
         currentTime = clampedTime
-        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
-            if let ip = self?.instrumentalPlayer {
-                ip.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
-                    completion()
-                }
-            } else {
-                completion()
-            }
+        player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
+            completion()
         }
     }
 
     func loadInstrumental(url: URL) {
         guard FileManager.default.fileExists(atPath: url.path) else { return }
-        player.isMuted = true
-        instrumentalPlayer = AVPlayer(url: url)
-        instrumentalPlayer?.volume = 1.0
-    }
 
-    private func startSyncTimer() {
-        syncTimer?.invalidate()
-        syncTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self, let ip = self.instrumentalPlayer else { return }
-            let videoTime = self.player.currentTime().seconds
-            let audioTime = ip.currentTime().seconds
-            // Only re-sync if drift exceeds 150ms — small drifts are imperceptible
-            if abs(videoTime - audioTime) > 0.15 {
-                ip.seek(to: CMTime(seconds: videoTime, preferredTimescale: 600))
+        Task {
+            do {
+                let composition = AVMutableComposition()
+
+                // Add video track from original video
+                let videoAsset = AVURLAsset(url: videoURL)
+                let videoTracks = try await videoAsset.loadTracks(withMediaType: .video)
+                if let videoTrack = videoTracks.first {
+                    let compositionVideoTrack = composition.addMutableTrack(
+                        withMediaType: .video,
+                        preferredTrackID: kCMPersistentTrackID_Invalid
+                    )
+                    let videoDuration = try await videoAsset.load(.duration)
+                    try compositionVideoTrack?.insertTimeRange(
+                        CMTimeRange(start: .zero, duration: videoDuration),
+                        of: videoTrack,
+                        at: .zero
+                    )
+                }
+
+                // Add audio track from instrumental file
+                let audioAsset = AVURLAsset(url: url)
+                let audioTracks = try await audioAsset.loadTracks(withMediaType: .audio)
+                if let audioTrack = audioTracks.first {
+                    let compositionAudioTrack = composition.addMutableTrack(
+                        withMediaType: .audio,
+                        preferredTrackID: kCMPersistentTrackID_Invalid
+                    )
+                    let audioDuration = try await audioAsset.load(.duration)
+                    try compositionAudioTrack?.insertTimeRange(
+                        CMTimeRange(start: .zero, duration: audioDuration),
+                        of: audioTrack,
+                        at: .zero
+                    )
+                }
+
+                let playerItem = AVPlayerItem(asset: composition)
+                await MainActor.run {
+                    player.replaceCurrentItem(with: playerItem)
+                }
+            } catch {
+                print("Failed to create composition: \(error)")
+                // Fall back to muted video (no instrumental)
             }
         }
     }
