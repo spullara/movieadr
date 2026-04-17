@@ -98,74 +98,96 @@ struct TeleprompterCanvasView: View {
         let fontSize = max(14, min(22, H * 0.035))
         let pxPerSec = W * 0.15
         let baseY = H * 0.85
-        let wordGap = fontSize * 0.5
+        let lineSpacing = fontSize * 1.5
         let visibleLeft = currentTime - Double(nowX / pxPerSec) - 2
         let visibleRight = currentTime + Double((W - nowX) / pxPerSec) + 2
+        let padding: CGFloat = fontSize * 0.2  // small horizontal padding between words
 
-        // Group words into lines based on timing gaps (>0.3s gap = new line)
-        var lines: [[TimedWord]] = []
-        var currentLine: [TimedWord] = []
-        for word in words {
-            if let last = currentLine.last, word.start - last.end > 0.3 {
-                lines.append(currentLine)
-                currentLine = []
-            }
-            currentLine.append(word)
+        // Pre-compute positions for each visible word
+        struct WordLayout {
+            let word: TimedWord
+            let x: CGFloat
+            let width: CGFloat
+            var slot: Int
         }
-        if !currentLine.isEmpty { lines.append(currentLine) }
 
-        for (li, line) in lines.enumerated() {
-            guard let firstWord = line.first, let lastWord = line.last else { continue }
-            // Skip lines entirely outside visible range
-            if lastWord.start < visibleLeft || firstWord.start > visibleRight { continue }
+        var layouts: [WordLayout] = []
 
-            // Alternate lines vertically: even lines above center, odd lines below
-            let lineOffset: CGFloat = (li % 2 == 0) ? -fontSize * 0.8 : fontSize * 0.8
-            let y = baseY + lineOffset
+        for word in words {
+            if word.end < visibleLeft || word.start > visibleRight { continue }
 
-            // Compute cumulative x offsets so words don't overlap within a line
-            // First word anchors at its timestamp position; subsequent words use
-            // max(timestamp position, previous word's right edge + gap)
-            var nextMinX: CGFloat = -.infinity
-            for word in line {
-                let tsX = nowX + CGFloat(word.start - currentTime) * pxPerSec
-                let resolvedFont = Font.system(size: fontSize, weight: .bold)
+            let tsX = nowX + CGFloat(word.start - currentTime) * pxPerSec
+            let resolvedFont = Font.system(size: fontSize, weight: .bold)
+            let text = context.resolve(Text(word.word).font(resolvedFont))
+            let textSize = text.measure(in: CGSize(width: W, height: H))
 
-                var text = context.resolve(Text(word.word).font(resolvedFont))
-                let textSize = text.measure(in: CGSize(width: W, height: H))
-                let x = max(tsX, nextMinX)
-                nextMinX = x + textSize.width + wordGap
+            // Skip off-screen
+            if tsX + textSize.width < 0 || tsX > W { continue }
 
-                // Skip off-screen words
-                if x + textSize.width < 0 || x > W { continue }
+            layouts.append(WordLayout(word: word, x: tsX, width: textSize.width, slot: 0))
+        }
 
-                // Highlight current word
-                if currentTime >= word.start && currentTime <= word.end {
-                    let highlightRect = CGRect(
-                        x: x - 2, y: y - fontSize * 0.6,
-                        width: textSize.width + 4, height: fontSize * 1.2
-                    )
-                    context.fill(Path(highlightRect), with: .color(.red.opacity(0.35)))
+        // Assign slots: for each word, find the lowest slot where it doesn't
+        // overlap horizontally with any already-placed word
+        for i in 0..<layouts.count {
+            var slot = 0
+            while slot <= 4 {
+                let overlaps = layouts[0..<i].contains { other in
+                    other.slot == slot &&
+                    layouts[i].x < other.x + other.width + padding &&
+                    layouts[i].x + layouts[i].width + padding > other.x
                 }
-
-                // Text color: past words dimmed, future/current bright
-                if currentTime > word.end {
-                    text.shading = .color(.white.opacity(0.5))
-                } else {
-                    text.shading = .color(.white)
-                }
-
-                // Draw text outline for readability, then fill
-                var outlineText = text
-                outlineText.shading = .color(.black)
-                for dx in stride(from: -1.0, through: 1.0, by: 1.0) {
-                    for dy in stride(from: -1.0, through: 1.0, by: 1.0) {
-                        if dx == 0 && dy == 0 { continue }
-                        context.draw(outlineText, at: CGPoint(x: x + textSize.width / 2 + dx, y: y + dy), anchor: .center)
-                    }
-                }
-                context.draw(text, at: CGPoint(x: x + textSize.width / 2, y: y), anchor: .center)
+                if !overlaps { break }
+                slot += 1
             }
+            layouts[i].slot = min(slot, 4)
+        }
+
+        // Draw each word
+        for layout in layouts {
+            // Slots alternate up/down: 0=base, 1=above, 2=below, 3=further above, 4=further below
+            let slotOffset: CGFloat
+            switch layout.slot {
+            case 0: slotOffset = 0
+            case 1: slotOffset = -lineSpacing
+            case 2: slotOffset = lineSpacing
+            case 3: slotOffset = -lineSpacing * 2
+            case 4: slotOffset = lineSpacing * 2
+            default: slotOffset = 0
+            }
+            let y = baseY + slotOffset
+            let x = layout.x
+
+            let resolvedFont = Font.system(size: fontSize, weight: .bold)
+            var text = context.resolve(Text(layout.word.word).font(resolvedFont))
+            let textSize = text.measure(in: CGSize(width: W, height: H))
+
+            // Highlight current word
+            if currentTime >= layout.word.start && currentTime <= layout.word.end {
+                let highlightRect = CGRect(
+                    x: x - 2, y: y - fontSize * 0.6,
+                    width: textSize.width + 4, height: fontSize * 1.2
+                )
+                context.fill(Path(highlightRect), with: .color(.red.opacity(0.35)))
+            }
+
+            // Text color
+            if currentTime > layout.word.end {
+                text.shading = .color(.white.opacity(0.5))
+            } else {
+                text.shading = .color(.white)
+            }
+
+            // Draw outline then fill
+            var outlineText = text
+            outlineText.shading = .color(.black)
+            for dx in stride(from: -1.0, through: 1.0, by: 1.0) {
+                for dy in stride(from: -1.0, through: 1.0, by: 1.0) {
+                    if dx == 0 && dy == 0 { continue }
+                    context.draw(outlineText, at: CGPoint(x: x + textSize.width / 2 + dx, y: y + dy), anchor: .center)
+                }
+            }
+            context.draw(text, at: CGPoint(x: x + textSize.width / 2, y: y), anchor: .center)
         }
     }
 }
