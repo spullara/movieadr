@@ -32,6 +32,15 @@ struct ProjectDetailView: View {
                     Label("Rename", systemImage: "pencil")
                 }
             }
+            ToolbarItem(placement: .automatic) {
+                Menu {
+                    Button(action: reprocess) {
+                        Label("Reprocess", systemImage: "arrow.clockwise")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
         }
         .alert("Rename Project", isPresented: $showRenameAlert) {
             TextField("Project name", text: $renameText)
@@ -114,6 +123,32 @@ struct ProjectDetailView: View {
             }
         }
         .padding()
+    }
+
+    private func reprocess() {
+        let projectDir = project.directoryURL
+
+        if let instrumentalPath = project.instrumentalRelativePath {
+            try? FileManager.default.removeItem(at: projectDir.appendingPathComponent(instrumentalPath))
+        }
+        if let vocalsPath = project.vocalsRelativePath {
+            try? FileManager.default.removeItem(at: projectDir.appendingPathComponent(vocalsPath))
+        }
+
+        try? FileManager.default.removeItem(at: projectDir.appendingPathComponent("waveform_peaks.json"))
+        try? FileManager.default.removeItem(at: projectDir.appendingPathComponent("word_timestamps.json"))
+
+        for file in (try? FileManager.default.contentsOfDirectory(at: projectDir, includingPropertiesForKeys: nil)) ?? [] {
+            if file.pathExtension == "wav" && !file.lastPathComponent.hasPrefix("take_") {
+                try? FileManager.default.removeItem(at: file)
+            }
+        }
+
+        project.instrumentalRelativePath = nil
+        project.vocalsRelativePath = nil
+        project.waveformPeaksRelativePath = nil
+        project.timestampsJSON = nil
+        project.isPrepared = false
     }
 
     private func processFullVideo() async {
