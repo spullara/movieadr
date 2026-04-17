@@ -36,7 +36,7 @@ final class PlayerController {
                 self.player.play()
                 self.isPlaying = true
                 if let ip = self.instrumentalPlayer {
-                    ip.seek(to: self.player.currentTime(), toleranceBefore: .zero, toleranceAfter: .zero)
+                    ip.seek(to: self.player.currentTime())
                     ip.play()
                     self.startSyncTimer()
                 }
@@ -45,7 +45,7 @@ final class PlayerController {
             player.play()
             isPlaying = true
             if let ip = instrumentalPlayer {
-                ip.seek(to: player.currentTime(), toleranceBefore: .zero, toleranceAfter: .zero)
+                ip.seek(to: player.currentTime())
                 ip.play()
                 startSyncTimer()
             }
@@ -68,7 +68,7 @@ final class PlayerController {
         let clampedTime = max(trimStart, min(time, trimEnd ?? duration))
         let cmTime = CMTime(seconds: clampedTime, preferredTimescale: 600)
         player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
-        instrumentalPlayer?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        instrumentalPlayer?.seek(to: cmTime)
         currentTime = clampedTime
     }
 
@@ -96,13 +96,13 @@ final class PlayerController {
 
     private func startSyncTimer() {
         syncTimer?.invalidate()
-        syncTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self, let ip = self.instrumentalPlayer else { return }
             let videoTime = self.player.currentTime().seconds
             let audioTime = ip.currentTime().seconds
-            if abs(videoTime - audioTime) > 0.05 {
-                ip.seek(to: CMTime(seconds: videoTime, preferredTimescale: 600),
-                        toleranceBefore: .zero, toleranceAfter: .zero)
+            // Only re-sync if drift exceeds 150ms — small drifts are imperceptible
+            if abs(videoTime - audioTime) > 0.15 {
+                ip.seek(to: CMTime(seconds: videoTime, preferredTimescale: 600))
             }
         }
     }
