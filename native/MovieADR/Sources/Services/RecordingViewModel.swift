@@ -75,7 +75,7 @@ final class RecordingViewModel {
 
         guard let url = currentTakeURL else { return nil }
 
-        // Verify file exists and get duration
+        // Verify file exists
         guard FileManager.default.fileExists(atPath: url.path) else {
             error = "Recording file not found"
             currentTakeURL = nil
@@ -85,12 +85,14 @@ final class RecordingViewModel {
         let take = Take(takeNumber: project.takes.count + 1, project: project)
         take.audioRelativePath = "takes/\(url.lastPathComponent)"
 
-        // Get duration from the recorded file
-        let asset = AVURLAsset(url: url)
-        Task {
-            if let duration = try? await asset.load(.duration) {
-                take.duration = duration.seconds
-            }
+        // Get duration synchronously from the file
+        do {
+            let audioFile = try AVAudioFile(forReading: url)
+            let duration = Double(audioFile.length) / audioFile.processingFormat.sampleRate
+            take.duration = duration
+        } catch {
+            print("Failed to get recording duration: \(error)")
+            take.duration = 0
         }
 
         modelContext.insert(take)

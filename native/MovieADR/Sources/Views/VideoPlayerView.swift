@@ -28,6 +28,21 @@ final class PlayerController {
     }
 
     func play() {
+        print("[PlayerController] play() - isPlaying=\(isPlaying), currentTime=\(currentTime), player.status=\(player.status.rawValue), currentItem=\(player.currentItem != nil)")
+        guard player.currentItem != nil else {
+            print("[PlayerController] play() - no current item!")
+            return
+        }
+        guard player.status == .readyToPlay else {
+            print("[PlayerController] play() - player not ready, status=\(player.status.rawValue)")
+            // Wait for player to be ready
+            player.currentItem?.asset.loadValuesAsynchronously(forKeys: ["playable"]) { [weak self] in
+                DispatchQueue.main.async {
+                    self?.play()
+                }
+            }
+            return
+        }
         if currentTime < trimStart {
             seek(to: trimStart) { [weak self] in
                 self?.player.play()
