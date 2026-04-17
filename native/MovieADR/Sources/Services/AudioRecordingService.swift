@@ -33,14 +33,19 @@ final class AudioRecordingService {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .mixWithOthers])
         try session.setActive(true)
+
+        // Use the actual hardware sample rate — inputNode.outputFormat may not match
+        let hwSampleRate = session.sampleRate
+        let hwChannels = AVAudioChannelCount(session.inputNumberOfChannels)
+        let tapFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: hwSampleRate, channels: max(hwChannels, 1), interleaved: false)!
+        #else
+        let tapFormat = inputNode.outputFormat(forBus: 0)
         #endif
 
-        let inputFormat = inputNode.outputFormat(forBus: 0)
-
-        // Create WAV file for output
+        // Create WAV file for output using the actual tap format's sample rate
         let wavSettings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatLinearPCM),
-            AVSampleRateKey: inputFormat.sampleRate,
+            AVSampleRateKey: tapFormat.sampleRate,
             AVNumberOfChannelsKey: 1,
             AVLinearPCMBitDepthKey: 16,
             AVLinearPCMIsFloatKey: false,
@@ -54,9 +59,8 @@ final class AudioRecordingService {
             interleaved: false
         )
 
-        // Install tap on input node — record audio, compute level, do NOT route to output
-        // Pass nil format to use the input node's native hardware format (avoids format mismatch crash)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] buffer, _ in
+        // Install tap using the correct hardware format
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { [weak self] buffer, _ in
             guard let self, let file = self.audioFile else { return }
 
             // Write buffer to file — convert to mono if input is multi-channel
